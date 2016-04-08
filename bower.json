@@ -1,0 +1,23 @@
+{
+  "name": "commonjs.runtime",
+  "description": "commonjs.runtime",
+  "main": "runtime/commonjs.js",
+  "authors": [
+    "attrs"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "modules",
+    "commonjs"
+  ],
+  "homepage": "https://github.com/attrs/webmodules",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests",
+    "lib",
+    "bin"
+  ]
+}
