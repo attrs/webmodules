@@ -2,16 +2,16 @@
 Module Management for Web Development.
 
 Offers the following features:
-- Installing web modules to separated folder `web_components`.
+- Installing web modules to `web_components` folder to separate them from `node_modules`.
 - Provides commonjs browser runtime that can be used in a webpage.
-- Assist install external dependencies when using webpack and browserify.
+- Assist in installing external dependencies when using webpack and browserify.
 
 Goals:
-- Provides simply way to install web modules.
+- Provides straightforward way to install web modules.
 - Separated installation of frontend modules and backend modules.
 - Provide optimized module system for realtime frontend development.
 - Optimized module building use only HTML page. (without a build scripts)
-- Provide appropriate packaging system for the webcomponents.
+- Provide appropriate packaging system for webcomponents.
 
 ## Installation
 ```sh
@@ -30,8 +30,8 @@ $ wm install packagename --save        # from npm
 $ wm install bower:packagename --save  # from bower
 ```
 
-- Installed packages will be located in `web_modules` folder.
-- Also you can choose the installation folder via `.webmodulesrc` file.  (but in the case of sub-modules, it does not apply)
+- Packages are located in `web_modules` folder when installed .
+- Also you can choose your own installation folder via `.webmodulesrc` file.  (but it's not applied to sub-modules)
 ```json
 {
     "directory": "path"
@@ -39,8 +39,8 @@ $ wm install bower:packagename --save  # from bower
 ```
 
 ### Use Browser Runtime in a Web Page
-> You can use browser runtime in a web page when you want to develop without a build process.
-> But only supported modules written in commonjs, umd or json. (Transpiler (es6/ts/jsx/coffee & etc) is not yet supported)
+> You can use browser runtime in a web page when you'd like to develop without a build process.
+> But modules written in commonjs, umd or json are only supported . (Transpiler (es6/ts/jsx/coffee & etc) is not yet supported)
 
 #### Using Node.js
 - Prepare for this example
