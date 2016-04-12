@@ -18,16 +18,11 @@ Goals:
 $ npm install -g webmodules
 ```
 
-If you need only browser runtime can use the [bower](http://bower.io/).
-```sh
-$ bower install webmodules --save
-```
-
 ## Usage
 ### Install Modules
 ```sh
-$ wm install packagename --save        # from npm
-$ wm install bower:packagename --save  # from bower
+$ wpm install packagename --save        # from npm
+$ wpm install bower:packagename --save  # from bower
 ```
 
 - Packages are located in `web_modules` folder when installed .
@@ -47,7 +42,7 @@ $ wm install bower:packagename --save  # from bower
 ```sh
 $ npm install -g webmodules
 $ npm install webmodules --save
-$ wm install jquery bower:select2 --save
+$ wpm install jquery bower:select2 --save
 ```
 
 - nodejs backend
@@ -164,7 +159,7 @@ $ webpack
 
 #### using init command
 ```sh
-$ wm init
+$ wpm init
 main: public/js/app.js
 dependency: jquery
 dependency: select2
