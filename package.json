@@ -3,36 +3,38 @@
   "version": "0.0.0",
   "description": "webmodules",
   "main": "lib/index.js",
+  "web": "runtime.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
-    "wm": "bin/main.js"
+    "wpm": "bin/main.js"
   },
   "dependencies": {
-    "async": "^1.4.0",
-    "chalk": "^1.0.0",
-    "commander": "^2.8.1",
-    "inquirer": "^0.9.0",
-    "npm": "^3.5.0",
-    "request": "^2.67.0",
-    "semver": "^5.1.0",
-    "simple-git": "^1.16.0",
-    "ssh2": "^0.4.12",
-    "uuid": "^2.0.1",
-    "wrench": "^1.5.8"
+    "async": "^1.5.2",
+    "bower": "^1.7.9",
+    "chalk": "^1.1.3",
+    "commander": "^2.9.0",
+    "fs-extra": "^0.26.7",
+    "inquirer": "^1.0.0",
+    "npm": "^3.8.6",
+    "request": "^2.70.0",
+    "semver": "^5.1.0"
   },
   "devDependencies": {
     "gulp": "^3.9.0",
     "gulp-mocha": "^2.1.3",
     "gulp-util": "^3.0.6"
   },
+  "webDependencies": {
+    "node-libs-browser": "^1.0.0"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/attrs/webmodules"
   },
-  "author": "attrs",
-  "license": "Apache-2.0",
+  "author": "joje <joje.attrs@gmail.com> (https://twitter.com/jojejoje6)",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/attrs/webmodules/issues"
   },
