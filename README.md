@@ -10,7 +10,7 @@
 Module Management for Web Development.
 
 Offers the following features:
-- Installing web modules to `web_components` folder to separate them from `node_modules`.
+- Installing web modules to `web_modules` folder to separate them from `node_modules`.
 - Provides commonjs browser runtime that can be used in a webpage.
 - Assist in installing external dependencies when using webpack and browserify.
 
@@ -86,7 +86,6 @@ $(document).ready(function($) {
 
 #### Using Bower
 ```sh
-$ npm install -g bower
 $ bower install webmodules jquery select2 --save
 ```
 
@@ -163,15 +162,6 @@ $ webpack
   }
   ...
 }
-```
-
-#### using init command
-```sh
-$ wpm init
-main: public/js/app.js
-dependency: jquery
-dependency: select2
-build: yes
 ```
 
 #### publish
