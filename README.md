@@ -1,4 +1,12 @@
 # webmodules
+
+[![NPM Version][npm-image]][npm-url] [![NPM Downloads][downloads-image]][downloads-url]
+
+[npm-image]: https://img.shields.io/npm/v/webmodules.svg?style=flat
+[npm-url]: https://npmjs.org/package/webmodules
+[downloads-image]: https://img.shields.io/npm/dm/webmodules.svg?style=flat
+[downloads-url]: https://npmjs.org/package/webmodules
+
 Module Management for Web Development.
 
 Offers the following features:

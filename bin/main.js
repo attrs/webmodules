@@ -50,7 +50,7 @@ commander
   .description('Uninstall Modules')
   .action(function(pkgs, options) {
     lib.commands.uninstall(pkgs, {
-      save: save
+      save: options.save
     }, function(err, pkgs) {
       if( err ) return error(err);
       console.log('%s package(s) uninstalled', pkgs.length);
