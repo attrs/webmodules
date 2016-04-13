@@ -2,7 +2,6 @@
 
 var chalk = require('chalk');
 var commander = require('commander');
-var inquirer = require('inquirer');
 var async = require('async');
 
 var pkg = require('../package.json');
@@ -65,6 +64,23 @@ commander
     console.log('  $ wpm uninstall npm_pacakge_name');
     console.log('  $ wpm uninstall npm_pacakge_name --save');
     console.log('  $ wpm uninstall bower_pacakge_name');
+    console.log();
+  });
+
+commander
+  .command('init')
+  .description('Init Module')
+  .action(function(options) {
+    lib.commands.init({
+      interactive: true
+    }, function(err) {
+      if( err ) return error(err);
+    });
+  })
+  .on('--help', function() {
+    console.log('  Examples:');
+    console.log();
+    console.log('  $ wpm init');
     console.log();
   });
 

@@ -29,8 +29,16 @@ $ npm install -g webmodules
 ## Usage
 ### Install Modules
 ```sh
-$ wpm install packagename --save        # from npm
-$ wpm install bower:packagename --save  # from bower
+$ wpm install packagename                     # from npm
+$ wpm install packagename@version
+$ wpm install packagename --save              # save to package.json
+$ wpm install githubuser/project              # from github
+$ wpm install bitbucket:user/project          # from bitbucket
+$ wpm install bower:packagename               # from bower
+$ wpm install bower:packagename@version
+$ wpm install installname[packagename]        # change module name
+$ wpm install installname[bower:packagename]
+...
 ```
 
 - Packages are located in `web_modules` folder when installed .
