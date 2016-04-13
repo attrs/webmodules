@@ -1,0 +1,13 @@
+{
+  "name": "webmodules-example-runtime",
+  "private": true,
+  "version": "0.0.0",
+  "main": "lib/index.js",
+  "dependencies": {
+    "express": "^4.13.4"
+  },
+  "webDependencies": {
+    "jquery": "^2.2.3",
+    "select2": "bower:^4.0.2"
+  }
+}
