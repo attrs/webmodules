@@ -93,14 +93,14 @@
       var name = config('module.name') || current_filename || 'unnamed';
       var version = config('module.version') || '0.0.0';
       var dir = path.normalize(path.join(path.dirname(currentScript.src), '..', '..'));
-      var main = path.normalize(path.join(cwd, 'index.js'));
+      //var main = path.normalize(path.join(cwd, 'index.js'));
       var moduledir = path.normalize(path.join(path.dirname(currentScript.src), '..'));
       
       return {
         name: name,
         version: version,
         dir: dir,
-        main: path.normalize(path.join(cwd, 'index.js')),
+        //main: path.normalize(path.join(cwd, 'index.js')),
         moduledir: moduledir,
         manifest: {
           name: name,
@@ -109,7 +109,7 @@
         }
       };
     })();
-    var debug = config('debug');
+    var debug = config('debug') === 'true' ? true : false;
     
     window.process = {
       env: {
