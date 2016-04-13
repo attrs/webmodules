@@ -54,20 +54,27 @@ $ wpm install installname[bower:packagename]
 > But modules written in commonjs, umd or json are only supported . (Transpiler (es6/ts/jsx/coffee & etc) is not yet supported)
 
 #### Using Node.js
-- Prepare for this example
+> See [Example](./examples/runtime/)
+
+- Prepare for example
 ```sh
 $ npm install -g webmodules
 $ npm install webmodules --save
-$ wpm install jquery bower:select2 --save
+$ wpm install jquery d3 angular react react-dom --save
 ```
 
 - nodejs backend
 ```javascript
+var http = require('http');
 var express = require('express');
 var webmodules = require('webmodules');
-var app = express();
-app.use('/', express.static('public'));
-app.use('/web_modules', webmodules.router());
+
+express()
+  .use('/test', express.static('public'))
+  .use('/web_modules', webmodules.router())
+  .listen(9000, function () {
+    console.log('httpd listening on port 9000');
+  });
 ...
 ```
 
@@ -79,16 +86,46 @@ app.use('/web_modules', webmodules.router());
   <script type="text/commonjs" data-src="js/app.js"></script>
   <script src="/web_modules/webmodules/runtime.js"></script>
 </head>
+<body>
+  <div id="content"></div>
+</body>
+</html>
 ....
 ```
 
 - public/js/app.js
 ```javascript
-var path = require('path');  // from node_libs_browser
+var path = require('path');
 var $ = require('jquery');
-var select2 = require('select2');
+var angular = require('angular');
+var d3 = require('d3');
+var react = require('react');
+var reactdom = require('react-dom');
+
 $(document).ready(function($) {
-  // ...
+  console.log('module', require.module);
+  console.log('jquery', $);
+  console.log('angular', angular);
+  console.log('d3', d3);
+  console.log('react', react);
+  console.log('reactdom', reactdom);
+  console.log('sub', sub);
+  console.log('path', path.join(__dirname, 'test'));
+  
+  var CommentBox = react.createClass({displayName: 'CommentBox',
+    render: function() {
+      return (
+        react.createElement('div', {className: "commentBox"},
+          "Hello, world! I am a CommentBox."
+        )
+      );
+    }
+  });
+  
+  reactdom.render(
+    react.createElement(CommentBox, null),
+    document.getElementById('content')
+  );
 });
 ```
 
