@@ -1,8 +1,10 @@
 {
-  "name": "doubling",
+  "name": "webmodules-example-doubling",
+  "private": true,
   "version": "0.0.0",
-  "main": "public/js/app.js",
-  "web": "public/js/app.js",
+  "main": "src/app.js",
+  "web": "src/app.js",
+  "web-dist": "dist/app.js",
   "webDependencies": {
     "jquery": "^2.2.3",
     "select2": "bower:^4.0.1"
