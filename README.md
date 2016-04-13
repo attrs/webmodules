@@ -75,7 +75,6 @@ express()
   .listen(9000, function () {
     console.log('httpd listening on port 9000');
   });
-...
 ```
 
 - public/index.html
@@ -90,7 +89,6 @@ express()
   <div id="content"></div>
 </body>
 </html>
-....
 ```
 
 - public/js/app.js
@@ -129,35 +127,10 @@ $(document).ready(function($) {
 });
 ```
 
-#### Using Bower
-```sh
-$ bower install webmodules jquery select2 --save
-```
-
-- index.html
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <script type="text/commonjs" data-src="app.js"></script>
-  <script src="/bower_components/webmodules/runtime.min.js"></script>
-</head>
-....
-```
-
-- app.js
-```javascript
-var path = require('path');  // from node_libs_browser
-var $ = require('jquery');
-var select2 = require('select2');
-$(document).ready(function($) {
-  // ...
-});
-```
-
 
 ### Build modules with [webpack](http://webpack.github.io/docs/)
-create `webpack.config.js`.
+create `webpack.config.js`
+
 ```javascript
 module.exports = {
   "entry": {
@@ -195,28 +168,10 @@ $ webpack
 }
 ```
 
-#### bower.json
-```json
-{
-  "name": "your_package_name",
-  "version": "0.0.0",
-  "main": "dist/app.js",
-  "dependencies": {
-    "jquery": "^2.2.3",
-    "select2": "bower:^4.0.1"
-  }
-  ...
-}
-```
-
 #### publish
 ```sh
 $ npm publish
-$ bower regist your_package_name
 ```
-
-
-
 
 
 ### License
