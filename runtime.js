@@ -109,6 +109,13 @@
         }
       };
     })();
+    var debug = config('debug');
+    
+    window.process = {
+      env: {
+        NODE_ENV: 'development'
+      }
+    };
     
     //console.log('baseModule', path.join(path.dirname(currentScript.src), '..', '..'), baseModule);
     
@@ -256,7 +263,13 @@
       //console.log('create require', dir, context.name);
       
       function submodule(name) {
-        var moduledir = path.join(context.moduledir, name);
+        var moduledir;
+        var peerDependencies = context.manifest.peerDependencies;
+        if( peerDependencies && peerDependencies[name] ) {
+          moduledir = path.join(context.dir, '..', name);
+        } else {
+          moduledir = path.join(context.moduledir, name);
+        }
         return loadModule(moduledir);
       }
       
@@ -274,7 +287,7 @@
           if( ~src.indexOf('/') ) {
             var modulename = src.substring(0, src.indexOf('/'));
             var subpath = src.substring(src.indexOf('/') + 1) || '';
-            if( !endsWith(subpath, '.js') && !endsWith(subpath, '.json') ) subpath = path.join(subpath, 'index.js');
+            //if( !endsWith(subpath, '.js') && !endsWith(subpath, '.json') ) subpath = path.join(subpath, 'index.js');
             module = submodule(modulename);
             filepath = path.normalize(path.join(module.dir, subpath));
           } else {
@@ -298,7 +311,14 @@
           } else module = context;
         }
         
-        //console.log('resolved', src, filepath);
+        // nodejs 에서 require('./file') 의 경우 file.js 가 있을 경우 file.js 를 의미하고 디렉토리일경우 ./file/index.js 를
+        // 의미하지만, 파일맵을 만들어서 체크하기 전까지 / 로 끝날경우 index.js 를 붙여주고 아닌경우 .js 로 해석하기로
+        
+        if( endsWith(filepath, '/') ) filepath = filepath + 'index.js';
+        if( !endsWith(filepath, '.js') || endsWith(filepath, '.json') ) filepath = filepath + '.js';
+        
+        if( debug ) console.log('[webmodules] resolve', src, filepath);
+        
         return {
           module: module,
           filepath: filepath

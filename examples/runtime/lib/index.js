@@ -12,5 +12,3 @@ http.createServer(app).listen({
 }, function() {
   console.log('httpd listening on %s', PORT);
 });
-
-//console.log(require('../node_modules/express/lib/request.js'));
