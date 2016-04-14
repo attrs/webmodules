@@ -29,14 +29,14 @@ $ npm install -g webmodules
 ## Usage
 ### Install Modules
 ```sh
-$ wpm install packagename                     # from npm
+$ wpm install packagename                 # from npm
 $ wpm install packagename@version
-$ wpm install packagename --save              # save to package.json
-$ wpm install githubuser/project              # from github
-$ wpm install bitbucket:user/project          # from bitbucket
-$ wpm install bower:packagename               # from bower
+$ wpm install packagename --save          # save to package.json
+$ wpm install githubuser/project          # from github
+$ wpm install bitbucket:user/project      # from bitbucket
+$ wpm install bower:packagename           # from bower
 $ wpm install bower:packagename@version
-$ wpm install installname[packagename]        # change module name
+$ wpm install installname[packagename]    # change module installation name
 $ wpm install installname[bower:packagename]
 ...
 ```
@@ -54,7 +54,7 @@ $ wpm install installname[bower:packagename]
 > But modules written in commonjs, umd or json are only supported . (Transpiler (es6/ts/jsx/coffee & etc) is not yet supported)
 
 #### Using Node.js
-> See [Example](./examples/runtime/)
+- See [Example](./examples/runtime/)
 
 - Prepare for example
 ```sh
@@ -129,8 +129,13 @@ $(document).ready(function($) {
 
 
 ### Build modules with [webpack](http://webpack.github.io/docs/)
-create `webpack.config.js`
+#### Install webpack
+```sh
+$ npm install -g webpack
+```
 
+#### Configuration
+create `webpack.config.js`
 ```javascript
 module.exports = {
   "entry": {
@@ -148,6 +153,7 @@ module.exports = {
 };
 ```
 
+#### Build
 ```sh
 $ webpack
 ```
@@ -162,7 +168,7 @@ $ webpack
   "web": "public/js/app.js",
   "webDependencies": {
     "jquery": "^2.2.3",
-    "select2": "bower:^4.0.1"
+    "d3": "bower:*"
   }
   ...
 }
@@ -176,4 +182,4 @@ $ npm publish
 
 ### License
 Licensed under the MIT License.
-See [LICENSE](./LICENSE.md) for the full license text.
+See [LICENSE](./LICENSE) for the full license text.
