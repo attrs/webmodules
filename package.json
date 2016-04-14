@@ -1,6 +1,6 @@
 {
   "name": "webmodules",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "webmodules",
   "main": "lib/index.js",
   "web": "runtime.js",
