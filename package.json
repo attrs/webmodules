@@ -43,7 +43,7 @@
   "files": [
     "bin",
     "lib",
-    "runtime",
+    "runtime.js",
     "web_modules/node-libs-browser",
     "LICENSE",
     "README.md"
