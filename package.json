@@ -42,8 +42,6 @@
     "bin",
     "lib",
     "runtime.js",
-    "npm-shrinkwrap.json",
-    "web_modules/node-libs-browser",
     "LICENSE",
     "README.md"
   ]
