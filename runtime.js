@@ -491,7 +491,7 @@
     };
     
     // bootstrap module loading
-    WebModules.bootstrap(path.join(path.dirname(currentScript.src), 'web_modules', 'node-libs-browser'));
+    WebModules.bootstrap(path.join(path.dirname(currentScript.src), 'node_modules', 'node-libs-browser'));
     window.process = WebModules.require('process');
     
     // exports to global & scanning
