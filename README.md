@@ -159,14 +159,19 @@ $ webpack
 ```
 
 ### Publish Package as Web Module
+Please follow the notation method of package.json of [Browserify](https://github.com/substack/browserify-handbook#browser-field).
+
 #### package.json
 ```json
 {
   "name": "your_package_name",
   "version": "0.0.0",
   "main": "nodejs_main_js",
-  "web": "public/js/app.js",
-  "webDependencies": {
+  "browser": "public/js/app.js",
+  "browserDependencies": {
+    "lodash": "^4.11.1"
+  },
+  "browserPeerDependencies": {
     "jquery": "^2.2.3",
     "d3": "bower:*"
   }
@@ -178,6 +183,9 @@ $ webpack
 ```sh
 $ npm publish
 ```
+
+#### Contributing
+
 
 
 ### License
