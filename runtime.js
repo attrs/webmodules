@@ -1,6 +1,4 @@
 (function() {
-  if( typeof window !== 'object' ) throw new Error('[webmodules] browser only');
-  
   function __evaluate(script, src, exports, strict) {
     var evaluate = undefined;
     if( typeof exports === 'string' ) script += '\nmodule.exports = ' + exports + ';';
@@ -21,6 +19,10 @@
   
   (function() {
     "use strict";
+    
+    var LABEL = LABEL + '';
+    var WEB_MODULES = 'web_modules';
+    var NODE_MODULES = 'node_modules';
     
     var currentScript = window.document._currentScript || window.document.currentScript || (function() {
       var scripts = document.getElementsByTagName('script');
@@ -44,7 +46,7 @@
         var filepath = '';
         [].forEach.call(arguments, function(arg) {
           if( !arg ) return;
-          if( typeof arg !== 'string' ) throw new Error('path.join arguments must be a string');
+          if( typeof arg !== 'string' ) throw new Error('arguments must be a string');
           arg = arg.trim();
           
           if( filepath && arg[0] === '/' ) arg = arg.substring(1, arg.length);
@@ -85,7 +87,7 @@
       return {
         write: function(src, contents) {
           src = path.normalize(src);
-          if( debug ) console.log('[webmodules] fs write', src);
+          if( debug ) console.log(LABEL + 'fs write', src);
           files[src] = contents;
           return this;
         },
@@ -117,9 +119,8 @@
     }
     
     var cwd = path.normalize('.');
-    var current_filename = path.filename(path.normalize());
     var basePackage = (function() {
-      var name = config('module.name') || current_filename || 'unnamed';
+      var name = config('module.name') || path.filename(path.normalize()) || 'index.html';
       var version = config('module.version') || '0.0.0';
       var dir = path.normalize(path.join(path.dirname(currentScript.src), '..', '..'));
       var moduledir = path.normalize(path.join(path.dirname(currentScript.src), '..'));
@@ -212,20 +213,10 @@
       }
     })();
     
-    /*var fileSupports = ['js', 'json', 'es6', 'ts', 'jsx', 'css', 'html', 'less'];
-    function isSupportedFile(src) {
-      if( !src ) return false;
-      var supported = false;
-      fileSupports.forEach(function(ext) {
-        if( endsWith(src.toLowerCase(), '.' + ext) ) supported = true;
-      });
-      return supported;
-    }*/
-    
     function validateFilename(src) {
       // - nodejs 의 경우, require('./file') 의 경우 file.js 가 있을 경우 file.js 를 의미하고 디렉토리일경우 ./file/index.js 를
-      // 의미하지만, 브라우저상태에서는 파일/디렉토리를 체크할 수 없으므로 파일맵을 만들어서 체크하기 전까지 / 로 끝날경우
-      // index.js 를 붙여주고 아닌경우 .js 로 해석하기로...
+      // 의미하지만, 브라우저 상태에서는 체크할 수 없으므로 package.json 설치시 TODO 파일맵을 만들어서 체크하기 전까지
+      // '/' 로 끝날 경우엔 index.js 를 붙여주고 아닌경우 .js 로 해석하기로 한다.
       // 덧붙여, nodejs 의 경우 test.js 와 test/index.js 가 있을 경우 require('./test') 시 test.js 에 우선권을 준다.
       if( endsWith(src, '/') ) src = src + 'index.js';
       //if( !isSupportedFile(src) ) src = src + '.js';
@@ -236,11 +227,11 @@
     // commonjs implementation
     var externals = {};
     function defineExternal(name, src, options) {
-      if( !name ) throw new TypeError('[webmodules] missing name');
-      if( typeof name !== 'string' ) throw new TypeError('[webmodules] name must be a string');
+      if( !name ) throw new TypeError(LABEL + 'missing name');
+      if( typeof name !== 'string' ) throw new TypeError(LABEL + 'name must be a string');
       
       options = options || {};
-      if( debug ) console.log('[webmodules] external', name, src, options.isPackage ? 'package' : 'module');
+      if( debug ) console.log(LABEL + 'external', name, src, options.isPackage ? 'package' : 'module');
       
       if( options.isPackage ) externals[name] = loadPackage(src);
       else externals[name] = src;
@@ -250,7 +241,7 @@
     
     function bootstrap(src) {
       var result = load(src);
-      if( debug ) console.log('[webmodules] bootstrap', src, result);
+      if( debug ) console.log(LABEL + 'bootstrap', src, result);
       for( var k in result ) if( result.hasOwnProperty(k) && result[k] ) defineExternal(k, result[k]);
       return this;
     }
@@ -259,14 +250,14 @@
       return __evaluate(script, src, exports, strict);
     }
     
-    function exec(context, fn, filename) {
-      if( !context ) throw new Error('[webmodules] exec: missing context');
-      if( typeof fn !== 'function' ) throw new TypeError('[webmodules] exec: module must be a function');
+    function exec(fn, filename) {
+      if( typeof fn !== 'function' ) throw new TypeError(LABEL + 'exec: module must be a function');
+      if( !filename ) throw new TypeError(LABEL + 'exec: missing filename');
       
-      if( debug ) console.log('[webmodules] exec', context.name, filename, path.dirname(filename));
+      if( debug ) console.log(LABEL + 'exec', filename);
       
       /* TODO: 
-      module.parent 에 대해서. (isotope-layout 모듈에서 발생한 문제)
+      module.parent 에 대해서. (socketio-browser 모듈에서 발생한 문제)
       nodejs 의 경우 호출한 Module 객체를 전달한다.
       Module {
         id: '.',
@@ -292,15 +283,14 @@
       var module = {parent:{}};
       var exports = module.exports = {};
       var global = window;
-      var __filename = filename || current_filename;
+      var __filename = filename;
       var __dirname = path.dirname(__filename);
-      var require = createRequire(__dirname, context);
+      var require = createRequire(__dirname);
       
       events.fire('before-exec', {
         fn: fn,
         exports: exports,
         require: require,
-        context: context,
         filename: __filename,
         dirname: __dirname
       });
@@ -309,7 +299,6 @@
         fn: fn,
         exports: exports,
         require: require,
-        context: context,
         filename: __filename,
         dirname: __dirname
       });
@@ -318,28 +307,28 @@
 
     var cache = {};
     function load(src, options) {
-      if( !src ) throw new TypeError('[webmodules] missing src');
-      if( typeof src !== 'string' ) throw new TypeError('[webmodules] src must be a string');
+      if( !src ) throw new TypeError(LABEL + 'missing src');
+      if( typeof src !== 'string' ) throw new TypeError(LABEL + 'src must be a string');
       
       src = path.normalize(src);
       if( cache[src] ) return cache[src];
       
       // find src's module
-      var context = findPackage(src);
-      if( debug ) console.log('[webmodules] load', src, context.name);
+      var pkg = getPackage(src);
+      if( debug ) console.log(LABEL + 'load', src, pkg.name);
       
-      if( context.dir === src ) src = context.main;
+      if( pkg.dir === src ) src = pkg.main;
       
-      // TODO: 파일패턴에 따라 다르게 load 해야한다. (css/html/less/jsx/es6/es7/ts)
+      // TODO: 로더지원 필요 (css/html/less/jsx/es2015/es2016/coffee/ts)
       // 일단 js 만 지원. 나머지 확장자는 pass
       if( path.extname(src).toLowerCase() !== '.js' ) {
-        console.warn('[webmodules] load unsupported pattern \'' + path.extname(src) + '\'', src);
+        console.warn(LABEL + 'load unsupported \'' + path.extname(src) + '\'', src);
         return cache[src] = {};
       }
       
       var script = loader(src);
       var fn = evaluate(script, src, options && options.exports, options && options.strict);
-      return cache[src] = exec(context, fn, src);
+      return cache[src] = exec(fn, src);
     }
     
     var packageCache = {};
@@ -348,6 +337,24 @@
       if( packageCache[dir] ) return packageCache[dir];
       
       var pkg = JSON.parse(loader(dir + '/package.json'));
+      
+      // 각 package 들이 일정한 표준을 따르고 있지 않아서 여러가지 문제가 발생할 수 있다.
+      // 여러가지 상황을 고려해 다음과 같은 원리로 로딩하기로 한다.
+      // browser 필드가 있을 경우
+      //   browser 필드가 string 인 경우 main 으로 취급
+      //   browser 필드가 array 인 경우 첫번째로 발견한 js 파일을 main 으로 취급하고 나머지를 리소스로 로드한다.
+      //   browser 필드가 object 인 경우 main 을 main 으로 취급하고 object 값에 따라 리소스를 alias 한다.
+      // main 과 browser 필드 모두 없을 경우
+      //   web 필드가 string 의 경우 main 으로 취급
+      //   web 필드가 array 인 경우 첫번째로 발견한 js 파일을 main 으로 취급하고 나머지를 리소스로 로드한다.
+      //   web 필드가 object 인 경우. main 없는 것으로 간주.
+      //   web 필드도 없을 경우. main 없는 것으로 간주.
+      // main 필드가 있는 경우
+      //   main 필드가 string 인 경우에만 main 으로 취급
+      // 여러가지 처리결과 main 을 확정할 수 없는 경우 index.js 를 main 으로 한다.
+      // 그럼에도 불구하고 index.js 가 없는 경우 패키지는 없는 것과 같다. (이 경우 wpm 으로 설치시 자동으로 빈파일로 채워준다)
+      // main 으로 확정된 파일이 js 가 아닌 경우도 상관없이 main 으로 취급한다. 파일패턴에 따라 그에 맞는 loader 가 작동.
+      // jspm 필드는 추후 지원하기로 한다.
       
       // - nodejs(v4.2) 의 경우, pacakage.json 의 main 이 지정되지 않았다면 index.js 를 기본값으로 대체한다.
       // 하지만 main 으로 결정된 파일이 존재하지 않는 경우 Cannot find module 에러를 발생시킨다.
@@ -373,7 +380,7 @@
         main = validateFilename(pkg.main || 'index.js');
       }
       
-      if( debug ) console.log('[webmodules] module loaded', pkg.name, dir, main);
+      if( debug ) console.log(LABEL + 'module loaded', pkg.name, dir, main);
       
       // main 확정 및 존재하는지 로드해본다.
       main = path.normalize(path.join(dir, main));
@@ -386,36 +393,36 @@
         main: main,
         manifest: pkg,
         aliases: aliases,
-        moduledir: path.join(dir, (pkg.browserDependencies || pkg.webDependencies) ? 'web_modules' : 'node_modules')
+        moduledir: path.join(dir, (pkg.browserDependencies || pkg.webDependencies) ? WEB_MODULES : NODE_MODULES)
       };
       
       return module;
     }
     
-    function findPackage(src) {
+    function getPackage(src) {
       var paths = src.split('/');
-      if( ~paths.indexOf('web_modules') || ~paths.indexOf('node_modules') ) {
-        var pos = paths.lastIndexOf('web_modules');
-        if( paths.lastIndexOf('node_modules') > pos ) pos = paths.lastIndexOf('node_modules');
+      if( ~paths.indexOf(WEB_MODULES) || ~paths.indexOf(NODE_MODULES) ) {
+        var pos = paths.lastIndexOf(WEB_MODULES);
+        if( paths.lastIndexOf(NODE_MODULES) > pos ) pos = paths.lastIndexOf(NODE_MODULES);
         var moduledir = paths.slice(0, pos + 2).join('/');
         return loadPackage(moduledir);
       }
       return basePackage;
     }
     
-    function createRequire(dir, context) {
-      if( !dir ) throw new Error('[webmodules] create require: missing dir');
-      if( !context ) throw new Error('[webmodules] create require: missing context');
+    function createRequire(dir) {
+      if( !dir ) throw new Error(LABEL + 'create require: missing dir');
+      var pkg = getPackage(dir);
       
-      //console.log('create require', dir, context.name);
+      if( debug ) console.log(LABEL + 'create require', dir, pkg.name);
       function submodule(name) {
         var moduledir;
-        var pd = context.manifest.peerDependencies;
-        var wpd = context.manifest.browserPeerDependencies || context.manifest.webPeerDependencies;
+        var pd = pkg.manifest.peerDependencies;
+        var wpd = pkg.manifest.browserPeerDependencies || pkg.manifest.webPeerDependencies;
         if( (pd && pd[name]) || (wpd && wpd[name]) ) {
-          moduledir = path.join(context.dir, '..', name);
+          moduledir = path.join(pkg.dir, '..', name);
         } else {
-          moduledir = path.join(context.moduledir, name);
+          moduledir = path.join(pkg.moduledir, name);
         }
         
         if( debug ) return loadPackage(moduledir);
@@ -429,14 +436,14 @@
       }
       
       function resolve(src) {
-        var filepath;
+        var filepath, srccase = 0;
         
         if( !src.indexOf('.') ) {
           filepath = path.normalize(path.join(dir, src));
-          //if( debug ) console.log('[webmodules] resolve(path)', src, filepath);
+          srccase = 1;
         } else if( !src.indexOf('/') ) {
           filepath = path.normalize(src);
-          //if( debug ) console.log('[webmodules] resolve(abspath)', src, filepath);
+          srccase = 2;
         } else {
           // sub module
           if( ~src.indexOf('/') ) {
@@ -447,17 +454,17 @@
             if( typeof module === 'string' ) filepath = !subpath ? module : path.normalize(path.join(module, subpath));
             else if( !subpath ) filepath = module.main;
             else filepath = path.normalize(path.join(module.dir, subpath));
-            //if( debug ) console.log('[webmodules] resolve(sub/path)', src, filepath);
+            srccase = 3;
           } else {
             var module = externals[src] || submodule(src);
             
             if( typeof module === 'string' ) filepath = module;
             else filepath = module.main;
-            //if( debug ) console.log('[webmodules] resolve(sub)', src, filepath);
+            srccase = 4;
           }
         }
         
-        if( debug ) console.log('[webmodules] resolve', src, validateFilename(filepath));
+        if( debug ) console.log(LABEL + 'resolve(' + srccase + ')', src, validateFilename(filepath));
         
         return validateFilename(filepath);
       }
@@ -466,8 +473,8 @@
         return load(resolve(src));
       }
       
-      require.__dirname = dir;
-      require.module = context;
+      require.directory = dir;
+      require.package = pkg;
       require.resolve = resolve;
       return require;
     }
@@ -492,7 +499,7 @@
     };
     
     // bootstrap module loading
-    WebModules.bootstrap(path.join(path.dirname(currentScript.src), 'node_modules', 'node-libs-browser'));
+    WebModules.bootstrap(path.join(path.dirname(currentScript.src), NODE_MODULES, 'node-libs-browser'));
     window.process = WebModules.require('process');
     
     // exports to global & scanning
