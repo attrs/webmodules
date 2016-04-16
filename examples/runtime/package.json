@@ -24,6 +24,7 @@
     "magnific-popup": "bower:~1.0.0",
     "select2": "~4.0.2",
     "isotope-layout": "~2.2.2",
-    "font-awesome": "bower:^4.5.0"
+    "font-awesome": "bower:^4.5.0",
+    "babel": "babel-standalone@^6.7.4"
   }
 }

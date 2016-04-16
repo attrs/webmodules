@@ -12,6 +12,7 @@ var font_awesome = require('font-awesome');
 //var less = require('less');
 var magnificpopup = require('magnific-popup');
 var select2 = require('select2');
+var babel = require('babel');
 
 // some problem (depends on global.jQuery)
 var jqueryui = require('jquery-ui');
@@ -31,13 +32,55 @@ $(document).ready(function($) {
   });
   
   console.log('module', require.module);
+  console.log('path', path.join(__dirname, 'test'));
   console.log('jquery', $);
   console.log('angular', angular);
   console.log('d3', d3);
   console.log('react', react);
   console.log('reactdom', reactdom);
   console.log('sub', sub);
-  console.log('path', path.join(__dirname, 'test'));
+  console.log('babel', babel);
+  
+  var es2015 = 'import {sum, pi} from "lib/math";\n\
+    const getMessage = () => "Hello World";\n\
+    export * from "lib/math";\n\
+    export var e = 2.71828182846;\n\
+    export default function(x) {\n\
+        return Math.exp(x);\n\
+    }';
+  var jsx = 'var Avatar = React.createClass({\n\
+      render: function() {\n\
+        return (\n\
+          <div>\n\
+            <PagePic pagename={this.props.pagename} />\n\
+            <PageLink pagename={this.props.pagename} />\n\
+          </div>\n\
+        );\n\
+      }\n\
+    });\n\
+    var PagePic = React.createClass({\n\
+      render: function() {\n\
+        return (\n\
+          <img src={"https://graph.facebook.com/" + this.props.pagename + "/picture"} />\n\
+        );\n\
+      }\n\
+    });\n\
+    var PageLink = React.createClass({\n\
+      render: function() {\n\
+        return (\n\
+          <a href={"https://www.facebook.com/" + this.props.pagename}>\n\
+            {this.props.pagename}\n\
+          </a>\n\
+        );\n\
+      }\n\
+    });\n\
+    ReactDOM.render(\n\
+      <Avatar pagename="Engineering" />,\n\
+      document.getElementById("example")\n\
+    );';
+  console.log('babel.transform');
+  console.log('- es2015\n', babel.transform(es2015, { presets: ['es2015'], sourceMaps: true }));
+  console.log('- jsx\n', babel.transform(jsx, { presets: ['react'], sourceMaps: true }));
   
   var CommentBox = react.createClass({displayName: 'CommentBox',
     render: function() {
