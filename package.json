@@ -34,6 +34,7 @@
   "homepage": "https://webmodules.github.io",
   "license": "MIT",
   "files": [
+    "npm-shrinkwrap.json",
     "bin",
     "lib",
     "runtime.js",
