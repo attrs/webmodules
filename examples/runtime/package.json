@@ -26,5 +26,7 @@
     "isotope-layout": "~2.2.2",
     "font-awesome": "bower:^4.5.0",
     "babel": "babel-standalone@^6.7.4"
-  }
+  },
+  "description": "webmodules-example-runtime",
+  "browser": "lib/index.js"
 }
