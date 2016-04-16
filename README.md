@@ -29,6 +29,7 @@ $ npm install -g webmodules
 ## Usage
 ### Install Modules
 ```sh
+$ wpm install                             # install browserDependencies(package.json)
 $ wpm install packagename                 # from npm
 $ wpm install packagename@version
 $ wpm install packagename --save          # save to package.json
