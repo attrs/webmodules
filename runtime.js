@@ -118,7 +118,7 @@
     
     var cwd = path.normalize('.');
     var current_filename = path.filename(path.normalize());
-    var baseModule = (function() {
+    var basePackage = (function() {
       var name = config('module.name') || current_filename || 'unnamed';
       var version = config('module.version') || '0.0.0';
       var dir = path.normalize(path.join(path.dirname(currentScript.src), '..', '..'));
@@ -137,7 +137,7 @@
     })();
     var debug = config('debug') === 'true' ? true : false;
     
-    //console.log('baseModule', path.join(path.dirname(currentScript.src), '..', '..'), baseModule);
+    //console.log('basePackage', path.join(path.dirname(currentScript.src), '..', '..'), basePackage);
     
     /*console.log(path.join('a', 'b', 'c'));
     console.log(path.join('a', '/b/', '/c'));
@@ -240,9 +240,9 @@
       if( typeof name !== 'string' ) throw new TypeError('[webmodules] name must be a string');
       
       options = options || {};
-      if( debug ) console.log('[webmodules] external', name, src, options.isModule ? 'module' : 'script');
+      if( debug ) console.log('[webmodules] external', name, src, options.isPackage ? 'package' : 'module');
       
-      if( options.isModule ) externals[name] = loadModule(src);
+      if( options.isPackage ) externals[name] = loadPackage(src);
       else externals[name] = src;
       
       return this;
@@ -325,7 +325,7 @@
       if( cache[src] ) return cache[src];
       
       // find src's module
-      var context = findModule(src);
+      var context = findPackage(src);
       if( debug ) console.log('[webmodules] load', src, context.name);
       
       if( context.dir === src ) src = context.main;
@@ -342,10 +342,10 @@
       return cache[src] = exec(context, fn, src);
     }
     
-    var modulecache = {};
-    function loadModule(src) {
+    var packageCache = {};
+    function loadPackage(src) {
       var dir = path.normalize(src);
-      if( modulecache[dir] ) return modulecache[dir];
+      if( packageCache[dir] ) return packageCache[dir];
       
       var pkg = JSON.parse(loader(dir + '/package.json'));
       
@@ -379,7 +379,7 @@
       main = path.normalize(path.join(dir, main));
       loader(main);
       
-      var module = modulecache[dir] = {
+      var module = packageCache[dir] = {
         name: pkg.name,
         version: pkg.version,
         dir: dir,
@@ -392,15 +392,15 @@
       return module;
     }
     
-    function findModule(src) {
+    function findPackage(src) {
       var paths = src.split('/');
       if( ~paths.indexOf('web_modules') || ~paths.indexOf('node_modules') ) {
         var pos = paths.lastIndexOf('web_modules');
         if( paths.lastIndexOf('node_modules') > pos ) pos = paths.lastIndexOf('node_modules');
         var moduledir = paths.slice(0, pos + 2).join('/');
-        return loadModule(moduledir);
+        return loadPackage(moduledir);
       }
-      return baseModule;
+      return basePackage;
     }
     
     function createRequire(dir, context) {
@@ -418,10 +418,10 @@
           moduledir = path.join(context.moduledir, name);
         }
         
-        if( debug ) return loadModule(moduledir);
+        if( debug ) return loadPackage(moduledir);
         
         try {
-          return loadModule(moduledir);
+          return loadPackage(moduledir);
         } catch(err) {
           if( debug ) console.error(err);
           throw new Error('Cannot find module \'' + name + '\' : ' + err.message);
@@ -474,15 +474,16 @@
     
     // pack webmodule
     var WebModules = {
-      require: createRequire(baseModule.dir, baseModule),
+      require: createRequire(basePackage.dir, basePackage),
       createRequire: createRequire,
       bootstrap: bootstrap,
       defineExternal: defineExternal,
       load: load,
+      loadPackage: loadPackage,
       evaluate: evaluate,
       exec: exec,
-      cache: cache,
-      modulecache: modulecache,
+      modules: cache,
+      packages: packageCache,
       externals: externals,
       fs: fs,
       on: events.on,
@@ -520,7 +521,7 @@
         var strict = el.hasAttribute('data-strict');
         
         var exports = el.getAttribute('data-exports');
-        var isModule = el.hasAttribute('data-module');
+        var isPackage = el.hasAttribute('data-package') || el.hasAttribute('data-module'); // deprecated : data-module
         
         if( !src ) {
           // write to virtual fs
@@ -532,7 +533,7 @@
           if( !src ) WebModules.bootstrap(src);
           else WebModules.bootstrap(src);
         } else if( name ) {
-          WebModules.defineExternal(name, src, {exports: exports, isModule: isModule});
+          WebModules.defineExternal(name, src, {exports: exports, isPackage: isPackage});
           if( exec ) WebModules.require(name);
         } else {
           WebModules.load(src, {strict:strict});
