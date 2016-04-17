@@ -1,7 +1,7 @@
 {
   "name": "webmodules",
   "description": "webmodules",
-  "main": "runtime.min.js",
+  "main": "runtime.js",
   "authors": [
     "attrs"
   ],
