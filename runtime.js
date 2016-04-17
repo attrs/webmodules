@@ -23,6 +23,7 @@
     var LABEL = '[webmodules] ';
     var WEB_MODULES = 'web_modules';
     var NODE_MODULES = 'node_modules';
+    var webmodules;
     
     var currentScript = window.document._currentScript || window.document.currentScript || (function() {
       var scripts = document.getElementsByTagName('script');
@@ -102,7 +103,7 @@
     function loader(src) {
       var text = fs.read(src), error;
       
-      if( !text ) {
+      if( text == null ) {
         var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
         xhr.open('GET', src, false);
         xhr.onreadystatechange = function(e) {
@@ -110,11 +111,11 @@
           else error = this.responseText;
         };
         xhr.send();
-      
+        
         if( error ) throw new Error('Cannot find module \'' + src + '\': ' + error);
         text = text.split('//# sourceMappingURL=').join('//'); // TODO: validate sourcemap URL
       }
-    
+      
       return text;
     }
     
@@ -508,6 +509,8 @@
     // bootstrap module loading
     WebModules.bootstrap(path.join(path.dirname(currentScript.src), NODE_MODULES, 'node-libs-browser'));
     window.process = WebModules.require('process');
+    
+    webmodules = WebModules.require('webmodules');
     
     // exports to global & scanning
     (function() {
