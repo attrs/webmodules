@@ -120,8 +120,8 @@
     
     var cwd = path.normalize('.');
     var basePackage = (function() {
-      var name = config('module.name') || path.filename(path.normalize()) || 'index.html';
-      var version = config('module.version') || '0.0.0';
+      var name = config('package.name') || path.filename(path.normalize()) || 'index.html';
+      var version = config('package.version') || '0.0.0';
       var dir = path.normalize(path.join(path.dirname(currentScript.src), '..', '..'));
       var moduledir = path.normalize(path.join(path.dirname(currentScript.src), '..'));
       
