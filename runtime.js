@@ -276,8 +276,6 @@
            '/Volumes/node_modules',
            '/node_modules' ]
         }
-      
-        의 형식인데, 이렇게 까지 해야 하는가... 고민이다.
       */
       
       var module = {parent:{}};
@@ -368,12 +366,14 @@
         main = manifest.main;
       }
       
+      // TODO: package.json 의 web 필드를 resources 로 저장해놓는다.
       if( resources ) {
         if( typeof resources === 'string' ) resources = [resources];
         if( !Array.isArray(resources) ) resources = null;
       }
       
-      // TODO: main 이 없을때 web 필드를 해석하는게 옳은지에 대해서는 생각해볼 필요가 있다.
+      // TODO: main 이 없을때 web 필드를 해석하는게 옳은지에 대해서는 생각해볼 필요가 있다. (호환성 문제)
+      // bower 등으로 설치한 경우 main 을 확정할 수 없을때는 require('pkg/subpath') 형태로 개발자가 직접 지정하는게 맞는것 같다.
       // 어쨋든, main 을 확정할 수 없을 경우 package.json/web 필드를 이용한다.
       // 배열일 경우, 가장 먼저 발견된 js 를 main 으로 하고, js 가 없을 경우, 첫번째 배열요소를 main 으로 선택한다.
       if( !main && resources ) {
@@ -470,7 +470,7 @@
           }
         }
         
-        if( !filepath ) throw new Error('[webmodules] package.main not defined: ' + src + ' \'' + module.dir + '\'');
+        if( !filepath ) throw new Error('Cannot find module \'' + src + ' \' : package.json main not defined');
         if( debug ) console.log(LABEL + 'resolve(' + srccase + ')', src, validateFilename(filepath));
         
         return validateFilename(filepath);
