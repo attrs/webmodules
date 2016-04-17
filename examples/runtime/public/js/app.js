@@ -1,4 +1,5 @@
 var path = require('path');
+var webmodules = require('webmodules');
 var $ = window.jQuery = require('jquery');
 var angular = require('angular');
 var d3 = require('d3');
@@ -81,6 +82,13 @@ $(document).ready(function($) {
   console.log('babel.transform');
   console.log('- es2015\n', babel.transform(es2015, { presets: ['es2015'], sourceMaps: true }));
   console.log('- jsx\n', babel.transform(jsx, { presets: ['react'], sourceMaps: true }));
+  
+  console.log('webmodules.loader', webmodules.loader.types());
+  console.log('loader(css)', webmodules.loader.load(path.join(__dirname, 'test', 'style.css')));
+  console.log('loader(less)', webmodules.loader.load(path.join(__dirname, 'test', 'style.less')));
+  console.log('loader(html)', webmodules.loader.load(path.join(__dirname, 'test', 'wc.html')));
+  console.log('loader(jsx)', webmodules.loader.load(path.join(__dirname, 'test', 'react.jsx')));
+  console.log('loader(es2015)', webmodules.loader.load(path.join(__dirname, 'test', 'es2015.es6')));
   
   var CommentBox = react.createClass({displayName: 'CommentBox',
     render: function() {

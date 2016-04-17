@@ -3,7 +3,7 @@
   "version": "0.0.9",
   "description": "webmodules",
   "main": "lib/index.js",
-  "browser": "runtime.js",
+  "browser": "browser/index.js",
   "bin": {
     "wpm": "bin/wpm.js"
   },
@@ -17,10 +17,12 @@
     "finalhandler": "^0.4.1",
     "fs-extra": "^0.26.7",
     "inquirer": "^1.0.0",
+    "less": "^2.6.1",
     "node-libs-browser": "^1.0.0",
     "npm": "^3.8.6",
     "semver": "^5.1.0",
-    "serve-static": "^1.10.2"
+    "serve-static": "^1.10.2",
+    "x-include": "^0.0.2"
   },
   "devDependencies": {
     "gulp": "^3.9.1",
