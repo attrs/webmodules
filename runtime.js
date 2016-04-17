@@ -20,7 +20,7 @@
   (function() {
     "use strict";
     
-    var LABEL = LABEL + '';
+    var LABEL = '[webmodules] ';
     var WEB_MODULES = 'web_modules';
     var NODE_MODULES = 'node_modules';
     
@@ -336,7 +336,7 @@
       var dir = path.normalize(src);
       if( packageCache[dir] ) return packageCache[dir];
       
-      var pkg = JSON.parse(loader(dir + '/package.json'));
+      var manifest = JSON.parse(loader(dir + '/package.json'));
       
       // 각 package 들이 일정한 표준을 따르고 있지 않아서 여러가지 문제가 발생할 수 있다.
       // 여러가지 상황을 고려해 다음과 같은 원리로 로딩하기로 한다.
@@ -345,10 +345,7 @@
       //   browser 필드가 array 인 경우 첫번째로 발견한 js 파일을 main 으로 취급하고 나머지를 리소스로 로드한다.
       //   browser 필드가 object 인 경우 main 을 main 으로 취급하고 object 값에 따라 리소스를 alias 한다.
       // main 과 browser 필드 모두 없을 경우
-      //   web 필드가 string 의 경우 main 으로 취급
-      //   web 필드가 array 인 경우 첫번째로 발견한 js 파일을 main 으로 취급하고 나머지를 리소스로 로드한다.
-      //   web 필드가 object 인 경우. main 없는 것으로 간주.
-      //   web 필드도 없을 경우. main 없는 것으로 간주.
+      //   index.js 를 main 으로 한다.
       // main 필드가 있는 경우
       //   main 필드가 string 인 경우에만 main 으로 취급
       // 여러가지 처리결과 main 을 확정할 수 없는 경우 index.js 를 main 으로 한다.
@@ -361,42 +358,51 @@
       // - web 의 경우 배열로 지정될 수 있으며, js 외에 html/css 가 함께 지정되어 있기도 하다.
       // - nodejs(v4.2) 의 경우, main 이 js 가 아니라도 파일이 존재하기만 한다면 require.resolve 에서 에러가 나진 않는다.
       // 하지만 require 를 하면 실행을 하면서 문법 오류가 발생한다.
-      var main, aliases = {};
-      if( typeof (pkg.browser || pkg.web) === 'string' ) {
-        main = validateFilename(pkg.browser || pkg.web);
-      } else if( pkg.browser && typeof browser === 'object' ) {
-        main = validateFilename(pkg.main || 'index.js');
-        aliases = pkg.browser;
-      } else if( pkg.web && Array.isArray(pkg.web) ) {
-        pkg.web.forEach(function(web) {
-          web = validateFilename(web);
-          // 간혹 main 에 index.js 를 index 처럼 확장자를 빼고 입력해놓은 경우가 있다. (console-browserify)
-          if( endsWith(web, '.js') ) main = web;
-          //else load(path.normalize(path.join(dir, web))); // 여기서 load 를 호출하면 순환 오류 발생한다.
-        });
-        
-        if( !main ) main = pkg.web[0];
+      var main, aliases = {}, resources = manifest.web;
+      if( typeof manifest.browser === 'string' ) {
+        main = validateFilename(manifest.browser);
+      } else if( manifest.browser && typeof browser === 'object' ) {
+        main = manifest.main;
+        aliases = manifest.browser;
       } else {
-        main = validateFilename(pkg.main || 'index.js');
+        main = manifest.main;
       }
       
-      if( debug ) console.log(LABEL + 'module loaded', pkg.name, dir, main);
+      if( resources ) {
+        if( typeof resources === 'string' ) resources = [resources];
+        if( !Array.isArray(resources) ) resources = null;
+      }
       
-      // main 확정 및 존재하는지 로드해본다.
-      main = path.normalize(path.join(dir, main));
-      loader(main);
+      // TODO: main 이 없을때 web 필드를 해석하는게 옳은지에 대해서는 생각해볼 필요가 있다.
+      // 어쨋든, main 을 확정할 수 없을 경우 package.json/web 필드를 이용한다.
+      // 배열일 경우, 가장 먼저 발견된 js 를 main 으로 하고, js 가 없을 경우, 첫번째 배열요소를 main 으로 선택한다.
+      if( !main && resources ) {
+        resources.forEach(function(src) {
+          if( endsWith(src, '.js') && !main ) main = src;
+        });
+        if( !main ) main = resources[0];
+      }
       
-      var module = packageCache[dir] = {
-        name: pkg.name,
-        version: pkg.version,
+      if( debug ) console.log(LABEL + 'package loaded', manifest.name, dir, main);
+      
+      // main 확정
+      main = validateFilename(path.normalize(path.join(dir, main || 'index.js')));
+      
+      // TODO: check file exists, package.json 의 _files 와 _directories 를 기준으로 체크한다.
+      // _files 혹은 _directories 가 지정되지 않았을 경우 존재하는 것으로 간주한다.
+      
+      var pkg = packageCache[dir] = {
+        name: manifest.name,
+        version: manifest.version,
         dir: dir,
         main: main,
-        manifest: pkg,
+        manifest: manifest,
         aliases: aliases,
-        moduledir: path.join(dir, (pkg.browserDependencies || pkg.webDependencies) ? WEB_MODULES : NODE_MODULES)
+        resources: resources,
+        moduledir: path.join(dir, (manifest.browserDependencies || manifest.webDependencies) ? WEB_MODULES : NODE_MODULES)
       };
       
-      return module;
+      return pkg;
     }
     
     function getPackage(src) {
@@ -464,6 +470,7 @@
           }
         }
         
+        if( !filepath ) throw new Error('[webmodules] package.main not defined: ' + src + ' \'' + module.dir + '\'');
         if( debug ) console.log(LABEL + 'resolve(' + srccase + ')', src, validateFilename(filepath));
         
         return validateFilename(filepath);
