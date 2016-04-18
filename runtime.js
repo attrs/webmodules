@@ -26,7 +26,7 @@
     var NODE_MODULES = 'node_modules';
     var webmodules;
     
-    var currentScript = window.document._currentScript || window.document.currentScript || (function() {
+    var currentScript = document._currentScript || document.currentScript || (function() {
       var scripts = document.getElementsByTagName('script');
       return scripts[scripts.length - 1];
     })();
