@@ -138,14 +138,14 @@
     var basePackage = (function() {
       var name = config('package.name') || path.filename(path.normalize()) || 'index.html';
       var version = config('package.version') || '0.0.0';
-      var dir = path.normalize(path.join(path.dirname(currentScript.src), '..', '..'));
-      var moduledir = path.normalize(path.join(path.dirname(currentScript.src), '..'));
+      var pkgdir = path.normalize(path.join(path.dirname(currentScript.src), '..'));
+      var dir = path.normalize(path.join(pkgdir, '..'));
       
       return {
         name: name,
         version: version,
         dir: dir,
-        moduledir: moduledir,
+        pkgdir: pkgdir,
         manifest: {
           name: name,
           version: version
@@ -154,7 +154,7 @@
     })();
     var debug = config('debug') === 'true' ? true : false;
     
-    //console.log('basePackage', path.join(path.dirname(currentScript.src), '..', '..'), basePackage);
+    if( debug ) console.log(LABEL + 'base pacakge', path.join(path.dirname(currentScript.src), '..', '..'), basePackage);
     
     /*console.log(path.join('a', 'b', 'c'));
     console.log(path.join('a', '/b/', '/c'));
@@ -413,8 +413,7 @@
         main: main,
         manifest: manifest,
         aliases: aliases,
-        resources: resources,
-        moduledir: path.join(dir, (manifest.browserDependencies || manifest.webDependencies) ? WEB_MODULES : NODE_MODULES)
+        resources: resources
       };
       
       return pkg;
@@ -425,8 +424,8 @@
       if( ~paths.indexOf(WEB_MODULES) || ~paths.indexOf(NODE_MODULES) ) {
         var pos = paths.lastIndexOf(WEB_MODULES);
         if( paths.lastIndexOf(NODE_MODULES) > pos ) pos = paths.lastIndexOf(NODE_MODULES);
-        var moduledir = paths.slice(0, pos + 2).join('/');
-        return loadPackage(moduledir);
+        var dir = paths.slice(0, pos + 2).join('/');
+        return loadPackage(dir);
       }
       return basePackage;
     }
@@ -437,19 +436,31 @@
       
       if( debug ) console.log(LABEL + 'create require', dir, pkg.name);
       function submodule(name) {
-        var moduledir;
-        var pd = pkg.manifest.peerDependencies;
-        var wpd = pkg.manifest.browserPeerDependencies || pkg.manifest.webPeerDependencies;
-        if( (pd && pd[name]) || (wpd && wpd[name]) ) {
-          moduledir = path.join(pkg.dir, '..', name);
+        var subpkgdir;
+        var manifest = pkg.manifest || {};
+        var bpd = manifest.browserPeerDependencies;
+        var pd = manifest.peerDependencies;
+        var bdep = manifest.browserDependencies;
+        var dep = manifest.dependencies;
+        
+        if( bpd && bpd[name] ) {
+          subpkgdir = path.join(basePackage.pkgdir, name);
+        } else if( pd && pd[name] ) {
+          subpkgdir = path.join(basePackage.pkgdir, name);
+        } else if( bdep && bdep[name] ) {
+          subpkgdir = pkg.pkgdir ? path.join(pkg.pkgdir, name) : path.join(pkg.dir, WEB_MODULES, name);
+        } else if( dep && dep[name] ) {
+          subpkgdir = pkg.pkgdir ? path.join(pkg.pkgdir, name) : path.join(pkg.dir, NODE_MODULES, name);
         } else {
-          moduledir = path.join(pkg.moduledir, name);
+          subpkgdir = pkg.pkgdir ? path.join(pkg.pkgdir, name) : path.join(pkg.dir, NODE_MODULES, name);
         }
         
-        if( debug ) return loadPackage(moduledir);
+        if( debug ) console.log(LABEL + 'submodule[' + name + '] dir:', subpkgdir);
+        
+        if( debug ) return loadPackage(subpkgdir);
         
         try {
-          return loadPackage(moduledir);
+          return loadPackage(subpkgdir);
         } catch(err) {
           if( debug ) console.error(err);
           throw new Error('Cannot find module \'' + name + '\' : ' + err.message);
