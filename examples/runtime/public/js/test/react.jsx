@@ -32,5 +32,5 @@ var PageLink = React.createClass({
 
 ReactDOM.render(
   <Avatar pagename="Engineering" />,
-  document.getElementById("example")
+  document.getElementById("react")
 );

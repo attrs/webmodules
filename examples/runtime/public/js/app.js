@@ -83,12 +83,14 @@ $(document).ready(function($) {
   console.log('- es2015\n', babel.transform(es2015, { presets: ['es2015'], sourceMaps: true }));
   console.log('- jsx\n', babel.transform(jsx, { presets: ['react'], sourceMaps: true }));
   
+  /*
   console.log('webmodules.loader', webmodules.loader.types());
   console.log('loader(css)', webmodules.loader.load(path.join(__dirname, 'test', 'style.css')));
   console.log('loader(less)', webmodules.loader.load(path.join(__dirname, 'test', 'style.less')));
   console.log('loader(html)', webmodules.loader.load(path.join(__dirname, 'test', 'wc.html')));
   console.log('loader(jsx)', webmodules.loader.load(path.join(__dirname, 'test', 'react.jsx')));
   console.log('loader(es2015)', webmodules.loader.load(path.join(__dirname, 'test', 'es2015.es6')));
+  */
   
   var CommentBox = react.createClass({displayName: 'CommentBox',
     render: function() {
@@ -104,4 +106,11 @@ $(document).ready(function($) {
     react.createElement(CommentBox, null),
     document.getElementById('content')
   );
+  
+  require('./test/style.css');
+  require('./test/style.less');
+  require('./test/wc.html');
+  require('./test/es2015.es6');
+  require('./test/react.jsx');
+  require('./test/es2015.jsx');
 });

@@ -1,4 +1,5 @@
 (function() {
+  var process;
   function __evaluate(script, src, exports, strict) {
     var evaluate = undefined;
     if( typeof exports === 'string' ) script += '\nmodule.exports = ' + exports + ';';
@@ -96,27 +97,41 @@
           if( !src ) return null;
           src = path.normalize(src);
           return files[src];
+        },
+        load: function(src) {
+          if( !src ) throw new Error(LABEL + 'missing src');
+          var text = files[path.normalize(src)], error;
+          if( text == null ) {
+            var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
+            xhr.open('GET', src, false);
+            xhr.onreadystatechange = function(e) {
+              if( this.readyState == 4 && this.status == 200 ) text = this.responseText;
+              else error = this.responseText;
+            };
+            xhr.send();
+        
+            if( error ) throw new Error('Cannot find module \'' + src + '\': ' + error);
+            text = text.split('//# sourceMappingURL=').join('//'); // TODO: validate sourcemap URL
+          }
+          return text;
         }
       }
     })();
     
-    function loader(src) {
-      var text = fs.read(src), error;
-      
-      if( text == null ) {
-        var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
-        xhr.open('GET', src, false);
-        xhr.onreadystatechange = function(e) {
-          if( this.readyState == 4 && this.status == 200 ) text = this.responseText;
-          else error = this.responseText;
-        };
-        xhr.send();
+    function loader(src, type) {
+      var exists, ext = path.extname(src).toLowerCase();
+      if( webmodules ) {
+        if( type ) exists = webmodules.loader.get(type) ? true : false;
+        else exists = webmodules.loader.exists(src);
         
-        if( error ) throw new Error('Cannot find module \'' + src + '\': ' + error);
-        text = text.split('//# sourceMappingURL=').join('//'); // TODO: validate sourcemap URL
+        if( !exists && !~['.js', '.json'].indexOf(ext) ) {
+          console.warn(LABEL + 'unsupported type \'' + path.extname(src) + '\'', src);
+        }
       }
       
-      return text;
+      if( exists ) return webmodules.loader.load(src, type);
+      else if( ext === '.json' ) return { exports: JSON.parse(fs.load(src)) };
+      else return { code: fs.load(src) };
     }
     
     var cwd = path.normalize('.');
@@ -318,16 +333,15 @@
       
       if( pkg.dir === src ) src = pkg.main;
       
-      // TODO: 로더지원 필요 (css/html/less/jsx/es2015/es2016/coffee/ts)
-      // 일단 js 만 지원. 나머지 확장자는 pass
-      if( path.extname(src).toLowerCase() !== '.js' ) {
-        console.warn(LABEL + 'load unsupported \'' + path.extname(src) + '\'', src);
-        return cache[src] = {};
+      var loaded = loader(src);
+      if( loaded.exports ) {
+        return cache[src] = loaded.exports;
+      } else if( loaded.code ) {
+        var fn = evaluate(loaded.code, src, options && options.exports, options && options.strict);
+        return cache[src] = exec(fn, src);
+      } else {
+        throw new Error(LABEL + 'load error: ' + src);
       }
-      
-      var script = loader(src);
-      var fn = evaluate(script, src, options && options.exports, options && options.strict);
-      return cache[src] = exec(fn, src);
     }
     
     var packageCache = {};
@@ -335,7 +349,7 @@
       var dir = path.normalize(src);
       if( packageCache[dir] ) return packageCache[dir];
       
-      var manifest = JSON.parse(loader(dir + '/package.json'));
+      var manifest = loader(dir + '/package.json').exports;
       
       // 각 package 들이 일정한 표준을 따르고 있지 않아서 여러가지 문제가 발생할 수 있다.
       // 여러가지 상황을 고려해 다음과 같은 원리로 로딩하기로 한다.
@@ -508,9 +522,9 @@
     
     // bootstrap module loading
     WebModules.bootstrap(path.join(path.dirname(currentScript.src), NODE_MODULES, 'node-libs-browser'));
-    window.process = WebModules.require('process');
-    
+    process = WebModules.require('process');
     webmodules = WebModules.require('webmodules');
+    webmodules.runtime(WebModules);
     
     // exports to global & scanning
     (function() {
