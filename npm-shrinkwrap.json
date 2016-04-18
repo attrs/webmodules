@@ -1,6 +1,6 @@
 {
   "name": "webmodules",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "dependencies": {
     "async": {
       "version": "1.5.2",
