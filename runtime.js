@@ -241,7 +241,7 @@
     }
     
     // commonjs implementation
-    var externals = {};
+    var externals = {}, internalpkgs = [];
     function defineExternal(name, src, options) {
       if( !name ) throw new TypeError(LABEL + 'missing name');
       if( typeof name !== 'string' ) throw new TypeError(LABEL + 'name must be a string');
@@ -260,7 +260,12 @@
     function bootstrap(src) {
       var result = load(src);
       if( debug ) console.log(LABEL + 'bootstrap', src, result);
-      for( var k in result ) if( result.hasOwnProperty(k) && result[k] ) defineExternal(k, result[k]);
+      for( var k in result ) {
+        if( result.hasOwnProperty(k) ) {
+          internalpkgs.push(k);
+          if( result[k] ) defineExternal(k, result[k]);
+        }
+      }
       return this;
     }
     
@@ -335,7 +340,18 @@
       
       if( pkg.dir === src ) src = pkg.main;
       
-      var loaded = loader(src);
+      var url = src;
+      
+      // browserify: https://github.com/substack/browserify-handbook#browser-field
+      if( pkg.aliases ) {
+        // src 가 다른 모듈로 swap 설정되어 있다면 실제 load 할 url 을 바꾼다.
+        var alias = pkg.aliases[src];
+        if( alias === false ) throw new Error(LABEL + 'sub module \'' + src + '\' is ignored: ' + pkg.name);
+        else if( alias && typeof alias === 'string' ) url = alias;
+        if( debug ) console.info(LABEL + 'alias find', src, alias, pkg.manifest.browser);
+      }
+      
+      var loaded = loader(url);
       if( loaded.exports ) {
         return cache[src] = loaded.exports;
       } else if( loaded.code ) {
@@ -373,31 +389,46 @@
       // - web 의 경우 배열로 지정될 수 있으며, js 외에 html/css 가 함께 지정되어 있기도 하다.
       // - nodejs(v4.2) 의 경우, main 이 js 가 아니라도 파일이 존재하기만 한다면 require.resolve 에서 에러가 나진 않는다.
       // 하지만 require 를 하면 실행을 하면서 문법 오류가 발생한다.
-      var main, aliases, resources = manifest.web;
+      var main, aliases;
       if( typeof manifest.browser === 'string' ) {
         main = validateFilename(manifest.browser);
-      } else if( manifest.browser && typeof browser === 'object' ) {
+      } else if( manifest.browser && typeof manifest.browser === 'object' ) {
         main = manifest.main;
-        aliases = manifest.browser;
+        
+        (function() {
+          aliases = {};
+          var bpd = manifest.browserPeerDependencies || {};
+          var pd = manifest.peerDependencies || {};
+          var bdep = manifest.browserDependencies || {};
+          var dep = manifest.dependencies || {};
+          
+          for(var k in manifest.browser) {
+            var v = manifest.browser[k];
+            if( bpd[k] || pd[k] || bdep[k] || dep[k] || ~internalpkgs.indexOf(k) || typeof v !== 'string' ) {
+              if( debug ) console.info(LABEL + 'swap package', k, v, manifest);
+            } else {
+              if( debug ) console.info(LABEL + 'swap file', k, v, manifest);
+              aliases[path.normalize(path.join(dir, k))] = path.normalize(path.join(dir, v));
+            }
+          }
+        })();
       } else {
         main = manifest.main;
-      }
-      
-      // TODO: package.json 의 web 필드를 resources 로 저장해놓는다.
-      if( resources ) {
-        if( typeof resources === 'string' ) resources = [resources];
-        if( !Array.isArray(resources) ) resources = null;
       }
       
       // TODO: main 이 없을때 web 필드를 해석하는게 옳은지에 대해서는 생각해볼 필요가 있다. (호환성 문제)
       // bower 등으로 설치한 경우 main 을 확정할 수 없을때는 require('pkg/subpath') 형태로 개발자가 직접 지정하는게 맞는것 같다.
       // 어쨋든, main 을 확정할 수 없을 경우 package.json/web 필드를 이용한다.
       // 배열일 경우, 가장 먼저 발견된 js 를 main 으로 하고, js 가 없을 경우, 첫번째 배열요소를 main 으로 선택한다.
-      if( !main && resources ) {
-        resources.forEach(function(src) {
-          if( endsWith(src, '.js') && !main ) main = src;
-        });
-        if( !main ) main = resources[0];
+      var web = manifest.web;
+      if( !main && web ) {
+        if( typeof web === 'string' ) web = [web];
+        if( Array.isArray(web) ) {
+          web.forEach(function(src) {
+            if( endsWith(src, '.js') && !main ) main = src;
+          });
+          if( !main ) main = web[0];
+        }
       }
       
       if( debug ) console.log(LABEL + 'package loaded', manifest.name, dir, main);
@@ -414,8 +445,7 @@
         dir: dir,
         main: main,
         manifest: manifest,
-        aliases: aliases,
-        resources: resources
+        aliases: aliases
       };
       
       return pkg;
@@ -439,6 +469,17 @@
       if( debug ) console.log(LABEL + 'create require', dir, pkg.name);
       function getSubPackage(name) {
         var subpkgdir;
+        
+        // browserify: aliases is package.json/browser 필드가 object 인 경우이다.
+        // https://github.com/substack/browserify-handbook#browser-field
+        var aliases = pkg.aliases;
+        if( aliases ) {
+          var alias = aliases[name];
+          if( alias === false ) 
+            throw new Error(LABEL + 'sub package \'' + name + '\' is ignored (package.json/browser) : ' + pkg.dir);
+          else if( alias && typeof alias === 'string' ) name = alias;
+        }
+        
         var ext = externals[name];
         if( ext ) {
           if( debug ) console.log(LABEL + '\'' + name + '\' is external pacakge', ext);
@@ -446,19 +487,10 @@
           else return ext.src;
         } else {
           var manifest = pkg.manifest || {};
-          var aliases = pkg.aliases;
           var bpd = manifest.browserPeerDependencies;
           var pd = manifest.peerDependencies;
           var bdep = manifest.browserDependencies;
           var dep = manifest.dependencies;
-          
-          // aliases is package.json/browser 필드가 object 인 경우이다.
-          if( aliases ) {
-            var alias = aliases[name];
-            if( alias === false ) 
-              throw new Error(LABEL + 'module \'' + name + '\' set disabled(package.json/browser) : ' + pkg.dir);
-            else if( alias && typeof alias === 'string' ) name = alias;
-          }
           
           if( bpd && bpd[name] ) {
             subpkgdir = path.join(basePackage.pkgdir, name);
