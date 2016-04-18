@@ -39,6 +39,7 @@
     "npm-shrinkwrap.json",
     "bin",
     "lib",
+    "browser",
     "runtime.js",
     "LICENSE",
     "README.md"
