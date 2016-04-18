@@ -373,7 +373,7 @@
       // - web 의 경우 배열로 지정될 수 있으며, js 외에 html/css 가 함께 지정되어 있기도 하다.
       // - nodejs(v4.2) 의 경우, main 이 js 가 아니라도 파일이 존재하기만 한다면 require.resolve 에서 에러가 나진 않는다.
       // 하지만 require 를 하면 실행을 하면서 문법 오류가 발생한다.
-      var main, aliases = {}, resources = manifest.web;
+      var main, aliases, resources = manifest.web;
       if( typeof manifest.browser === 'string' ) {
         main = validateFilename(manifest.browser);
       } else if( manifest.browser && typeof browser === 'object' ) {
@@ -446,11 +446,20 @@
           else return ext.src;
         } else {
           var manifest = pkg.manifest || {};
+          var aliases = pkg.aliases;
           var bpd = manifest.browserPeerDependencies;
           var pd = manifest.peerDependencies;
           var bdep = manifest.browserDependencies;
           var dep = manifest.dependencies;
-        
+          
+          // aliases is package.json/browser 필드가 object 인 경우이다.
+          if( aliases ) {
+            var alias = aliases[name];
+            if( alias === false ) 
+              throw new Error(LABEL + 'module \'' + name + '\' set disabled(package.json/browser) : ' + pkg.dir);
+            else if( alias && typeof alias === 'string' ) name = alias;
+          }
+          
           if( bpd && bpd[name] ) {
             subpkgdir = path.join(basePackage.pkgdir, name);
           } else if( pd && pd[name] ) {

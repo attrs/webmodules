@@ -43,5 +43,18 @@
     "runtime.js",
     "LICENSE",
     "README.md"
+  ],
+  "keywords": [
+    "commonjs",
+    "frontend",
+    "webmodule",
+    "browser",
+    "browserify",
+    "webpack",
+    "import",
+    "es6",
+    "es2015",
+    "jsx",
+    "react"
   ]
 }
