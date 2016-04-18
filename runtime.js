@@ -391,7 +391,7 @@
       // 하지만 require 를 하면 실행을 하면서 문법 오류가 발생한다.
       var main, aliases;
       if( typeof manifest.browser === 'string' ) {
-        main = validateFilename(manifest.browser);
+        main = manifest.browser;
       } else if( manifest.browser && typeof manifest.browser === 'object' ) {
         main = manifest.main;
         
@@ -434,7 +434,7 @@
       if( debug ) console.log(LABEL + 'package loaded', manifest.name, dir, main);
       
       // main 확정
-      main = validateFilename(path.normalize(path.join(dir, main || 'index.js')));
+      main = path.normalize(path.join(dir, main || 'index.js'));
       
       // TODO: check file exists, package.json 의 _files 와 _directories 를 기준으로 체크한다.
       // _files 혹은 _directories 가 지정되지 않았을 경우 존재하는 것으로 간주한다.
