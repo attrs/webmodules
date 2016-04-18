@@ -52,7 +52,8 @@ $ wpm install installname[bower:packagename]
 
 ### Use Browser Runtime in a Web Page
 > You can use browser runtime in a web page when you'd like to develop without a build process.
-> But modules written in commonjs, umd or json are only supported . (Transpiler (es6/ts/jsx/coffee & etc) is not yet supported)
+> supports es2015(*.es6), jsx(*.jsx), less(*.less), css(*.css), html(*.html)
+> es2015/jsx are transpiled using [`babel-standalone`](https://github.com/Daniel15/babel-standalone)
 
 #### Using Node.js
 - See [Example](./examples/runtime/)
