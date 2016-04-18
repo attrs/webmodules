@@ -249,8 +249,10 @@
       options = options || {};
       if( debug ) console.log(LABEL + 'external', name, src, options.isPackage ? 'package' : 'module');
       
-      if( options.isPackage ) externals[name] = loadPackage(src);
-      else externals[name] = src;
+      externals[name] = {
+        src: src,
+        isPackage: options.isPackage
+      }
       
       return this;
     }
@@ -435,29 +437,37 @@
       var pkg = getPackage(dir);
       
       if( debug ) console.log(LABEL + 'create require', dir, pkg.name);
-      function submodule(name) {
+      function getSubPackage(name) {
         var subpkgdir;
-        var manifest = pkg.manifest || {};
-        var bpd = manifest.browserPeerDependencies;
-        var pd = manifest.peerDependencies;
-        var bdep = manifest.browserDependencies;
-        var dep = manifest.dependencies;
-        
-        if( bpd && bpd[name] ) {
-          subpkgdir = path.join(basePackage.pkgdir, name);
-        } else if( pd && pd[name] ) {
-          subpkgdir = path.join(basePackage.pkgdir, name);
-        } else if( bdep && bdep[name] ) {
-          subpkgdir = pkg.pkgdir ? path.join(pkg.pkgdir, name) : path.join(pkg.dir, WEB_MODULES, name);
-        } else if( dep && dep[name] ) {
-          subpkgdir = pkg.pkgdir ? path.join(pkg.pkgdir, name) : path.join(pkg.dir, NODE_MODULES, name);
+        var ext = externals[name];
+        if( ext ) {
+          if( debug ) console.log(LABEL + '\'' + name + '\' is external pacakge', ext);
+          if( ext.isPackage ) subpkgdir = ext.src;
+          else return ext.src;
         } else {
-          subpkgdir = pkg.pkgdir ? path.join(pkg.pkgdir, name) : path.join(pkg.dir, NODE_MODULES, name);
+          var manifest = pkg.manifest || {};
+          var bpd = manifest.browserPeerDependencies;
+          var pd = manifest.peerDependencies;
+          var bdep = manifest.browserDependencies;
+          var dep = manifest.dependencies;
+        
+          if( bpd && bpd[name] ) {
+            subpkgdir = path.join(basePackage.pkgdir, name);
+          } else if( pd && pd[name] ) {
+            subpkgdir = path.join(basePackage.pkgdir, name);
+          } else if( bdep && bdep[name] ) {
+            subpkgdir = pkg.pkgdir ? path.join(pkg.pkgdir, name) : path.join(pkg.dir, WEB_MODULES, name);
+          } else if( dep && dep[name] ) {
+            subpkgdir = pkg.pkgdir ? path.join(pkg.pkgdir, name) : path.join(pkg.dir, NODE_MODULES, name);
+          } else {
+            subpkgdir = pkg.pkgdir ? path.join(pkg.pkgdir, name) : path.join(pkg.dir, NODE_MODULES, name);
+          }
         }
         
-        if( debug ) console.log(LABEL + 'submodule[' + name + '] dir:', subpkgdir);
-        
-        if( debug ) return loadPackage(subpkgdir);
+        if( debug ) {
+          console.log(LABEL + 'sub package[' + name + '] dir:', subpkgdir);
+          return loadPackage(subpkgdir);
+        }
         
         try {
           return loadPackage(subpkgdir);
@@ -481,14 +491,14 @@
           if( ~src.indexOf('/') ) {
             var modulename = src.substring(0, src.indexOf('/'));
             var subpath = src.substring(src.indexOf('/') + 1) || '';
-            var module = externals[modulename] || submodule(modulename);
+            var module = getSubPackage(modulename);
             
             if( typeof module === 'string' ) filepath = !subpath ? module : path.normalize(path.join(module, subpath));
             else if( !subpath ) filepath = module.main;
             else filepath = path.normalize(path.join(module.dir, subpath));
             srccase = 3;
           } else {
-            var module = externals[src] || submodule(src);
+            var module = getSubPackage(src);
             
             if( typeof module === 'string' ) filepath = module;
             else filepath = module.main;
