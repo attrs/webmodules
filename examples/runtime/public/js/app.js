@@ -34,6 +34,7 @@ $(document).ready(function($) {
   
   console.log('module', require.module);
   console.log('path', path.join(__dirname, 'test'));
+  console.log('webmodules', webmodules);
   console.log('jquery', $);
   console.log('angular', angular);
   console.log('d3', d3);
@@ -49,48 +50,8 @@ $(document).ready(function($) {
     export default function(x) {\n\
         return Math.exp(x);\n\
     }';
-  var jsx = 'var Avatar = React.createClass({\n\
-      render: function() {\n\
-        return (\n\
-          <div>\n\
-            <PagePic pagename={this.props.pagename} />\n\
-            <PageLink pagename={this.props.pagename} />\n\
-          </div>\n\
-        );\n\
-      }\n\
-    });\n\
-    var PagePic = React.createClass({\n\
-      render: function() {\n\
-        return (\n\
-          <img src={"https://graph.facebook.com/" + this.props.pagename + "/picture"} />\n\
-        );\n\
-      }\n\
-    });\n\
-    var PageLink = React.createClass({\n\
-      render: function() {\n\
-        return (\n\
-          <a href={"https://www.facebook.com/" + this.props.pagename}>\n\
-            {this.props.pagename}\n\
-          </a>\n\
-        );\n\
-      }\n\
-    });\n\
-    ReactDOM.render(\n\
-      <Avatar pagename="Engineering" />,\n\
-      document.getElementById("example")\n\
-    );';
   console.log('babel.transform');
   console.log('- es2015\n', babel.transform(es2015, { presets: ['es2015'], sourceMaps: true }));
-  console.log('- jsx\n', babel.transform(jsx, { presets: ['react'], sourceMaps: true }));
-  
-  /*
-  console.log('webmodules.loader', webmodules.loader.types());
-  console.log('loader(css)', webmodules.loader.load(path.join(__dirname, 'test', 'style.css')));
-  console.log('loader(less)', webmodules.loader.load(path.join(__dirname, 'test', 'style.less')));
-  console.log('loader(html)', webmodules.loader.load(path.join(__dirname, 'test', 'wc.html')));
-  console.log('loader(jsx)', webmodules.loader.load(path.join(__dirname, 'test', 'react.jsx')));
-  console.log('loader(es2015)', webmodules.loader.load(path.join(__dirname, 'test', 'es2015.es6')));
-  */
   
   var CommentBox = react.createClass({displayName: 'CommentBox',
     render: function() {
@@ -106,6 +67,15 @@ $(document).ready(function($) {
     react.createElement(CommentBox, null),
     document.getElementById('content')
   );
+  
+  /*
+  console.log('webmodules.loader', webmodules.loader.types());
+  console.log('loader(css)', webmodules.loader.load(path.join(__dirname, 'test', 'style.css')));
+  console.log('loader(less)', webmodules.loader.load(path.join(__dirname, 'test', 'style.less')));
+  console.log('loader(html)', webmodules.loader.load(path.join(__dirname, 'test', 'wc.html')));
+  console.log('loader(jsx)', webmodules.loader.load(path.join(__dirname, 'test', 'react.jsx')));
+  console.log('loader(es2015)', webmodules.loader.load(path.join(__dirname, 'test', 'es2015.es6')));
+  */
   
   require('./test/style.css');
   require('./test/style.less');
