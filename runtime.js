@@ -1,10 +1,10 @@
 (function() {
   var process;
   function __evaluate(script, src, exports, strict) {
-    var evaluate = undefined;
+    var __evaluate = window.__evaluate;
     if( typeof exports === 'string' ) script += '\nmodule.exports = ' + exports + ';';
     script = '/* ' + (src ? src : window.location.path) + ' */\
-    script = undefined, src = undefined, strict = undefined,\
+    script = window && window.script, src = window && window.src, strict = window && window.strict, \
     (function(exports, require, module, __filename, __dirname, global) { ' + script + '\n});';
     
     if( strict ) {
