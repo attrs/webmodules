@@ -55,9 +55,6 @@ $ wpm install installname[bower:packagename]
 > You can use browser runtime in a web page when you'd like to develop without a build process.
 > es2015(*.es6), jsx(*.jsx), less(*.less), css(*.css), html(*.html) are supported.
 
-- See [Example](./examples/runtime/)
-- See [Example - ThreeCats](https://github.com/joje6/three-cats)
-
 - Prepare for example
 ```sh
 $ npm install -g webmodules
@@ -128,6 +125,9 @@ $(document).ready(function($) {
   );
 });
 ```
+
+- See [Example](./examples/runtime/)
+- See [Example - ThreeCats](https://github.com/joje6/three-cats)
 
 
 ### Build modules with [webpack](http://webpack.github.io/docs/)
