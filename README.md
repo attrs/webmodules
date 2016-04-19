@@ -1,11 +1,12 @@
 # webmodules
 
-[![NPM Version][npm-image]][npm-url] [![NPM Downloads][downloads-image]][downloads-url]
+[![NPM Version][npm-version]][npm-url] [![NPM Downloads][npm-total]][npm-url] [![NPM Downloads][npm-month]][npm-url] [![NPM Downloads][license]][npm-url]
 
-[npm-image]: https://img.shields.io/npm/v/webmodules.svg?style=flat
+[npm-version]: https://img.shields.io/npm/v/webmodules.svg?style=flat
 [npm-url]: https://npmjs.org/package/webmodules
-[downloads-image]: https://img.shields.io/npm/dm/webmodules.svg?style=flat
-[downloads-url]: https://npmjs.org/package/webmodules
+[npm-total]: https://img.shields.io/npm/dt/webmodules.svg?style=flat
+[npm-month]: https://img.shields.io/npm/dm/webmodules.svg?style=flat
+[license]: https://img.shields.io/npm/l/webmodules.svg?style=flat
 
 Module Management for Web Development.
 
@@ -52,11 +53,10 @@ $ wpm install installname[bower:packagename]
 
 ### Use Browser Runtime in a Web Page
 > You can use browser runtime in a web page when you'd like to develop without a build process.
-> supports es2015(*.es6), jsx(*.jsx), less(*.less), css(*.css), html(*.html)
-> es2015/jsx are transpiled using [`babel-standalone`](https://github.com/Daniel15/babel-standalone)
+> es2015(*.es6), jsx(*.jsx), less(*.less), css(*.css), html(*.html) are supported.
 
-#### Using Node.js
 - See [Example](./examples/runtime/)
+- See [Example - ThreeCats](https://github.com/joje6/three-cats)
 
 - Prepare for example
 ```sh
