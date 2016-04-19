@@ -4,6 +4,10 @@
   "description": "webmodules",
   "main": "lib/index.js",
   "browser": "browser/index.js",
+  "repository": "attrs/webmodules",
+  "author": "joje <joje.attrs@gmail.com>",
+  "homepage": "https://github.com/attrs/webmodules",
+  "license": "MIT",
   "bin": {
     "wpm": "bin/wpm.js"
   },
@@ -31,10 +35,6 @@
     "gulp-uglify": "^1.5.3",
     "gulp-util": "^3.0.7"
   },
-  "repository": "attrs/webmodules",
-  "author": "joje <joje.attrs@gmail.com>",
-  "homepage": "https://webmodules.github.io",
-  "license": "MIT",
   "files": [
     "npm-shrinkwrap.json",
     "bin",

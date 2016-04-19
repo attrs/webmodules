@@ -122,7 +122,7 @@ var Loader = {
     el.setAttribute('href', src);
     document.head.appendChild(el);
     
-    require('less').registerStylesheets();
+    require('less').refresh();
   
     return {
       exports: el
