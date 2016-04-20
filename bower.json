@@ -3,12 +3,21 @@
   "description": "webmodules",
   "main": "runtime.js",
   "authors": [
-    "attrs"
+    "joje <joje.attrs@gmail.com>"
   ],
   "license": "MIT",
   "keywords": [
-    "modules",
-    "commonjs"
+    "commonjs",
+    "frontend",
+    "webmodule",
+    "browser",
+    "browserify",
+    "webpack",
+    "import",
+    "es6",
+    "es2015",
+    "jsx",
+    "react"
   ],
   "homepage": "https://github.com/attrs/webmodules",
   "ignore": [
