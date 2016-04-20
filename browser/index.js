@@ -1,14 +1,14 @@
 var babel = require('babel-standalone');
 
 var runtime;
-var loaders = {};
+var transpilers = {};
 var regexps = [];
-var Loader = {
+var Transpiler = {
   types: function() { 
-    return Object.keys(loaders);
+    return Object.keys(transpilers);
   },
   add: function(type, loader, regexp) {
-    loaders[type] = loader;
+    transpilers[type] = loader;
     
     if( regexp ) {
       if( !Array.isArray(regexp) ) regexp = [regexp];
@@ -24,7 +24,7 @@ var Loader = {
     return this;
   },
   get: function(type) {
-    return loaders[type];
+    return transpilers[type];
   },
   exists: function(src) {
     var exists;
@@ -33,7 +33,7 @@ var Loader = {
     });
     return exists;
   },
-  load: function(src, type) {
+  transpile: function(src, type) {
     if( !type ) {
       regexps.forEach(function(regexp) {
         if( regexp.regexp.test(src) ) type = regexp.type;
@@ -42,39 +42,39 @@ var Loader = {
     
     if( !type ) throw new Error('[webmodules] cannot find matched loader for src: ' + src);
     
-    var loader = loaders[type];
+    var loader = transpilers[type];
     if( !loader ) throw new Error('[webmodules] loader not exists:' + type);
     return loader(src);
   }
 };
 
-// bind default loaders
+// bind default transpilers
 (function() {
-  Loader.add('es2016', function(src) {
-    var transform = babel.transform(runtime.fs.load(src), { presets: ['es2015', 'stage-0'], sourceMaps: true });
+  Transpiler.add('es2016', function(src) {
+    var transform = babel.transform(runtime.fs.readFileSync(src), { presets: ['es2015', 'stage-0'], sourceMaps: true });
     return {
       sourcemap: transform,
       code: transform.code
     };
   }, /\.es6$/);
   
-  Loader.add('es2015', function(src) {
-    var transform = babel.transform(runtime.fs.load(src), { presets: ['es2015'], sourceMaps: true });
+  Transpiler.add('es2015', function(src) {
+    var transform = babel.transform(runtime.fs.readFileSync(src), { presets: ['es2015'], sourceMaps: true });
     return {
       sourcemap: transform,
       code: transform.code
     };
   });
   
-  Loader.add('jsx', function(src) {
-    var transform = babel.transform(runtime.fs.load(src), { presets: ['es2015', 'react'], sourceMaps: true });
+  Transpiler.add('jsx', function(src) {
+    var transform = babel.transform(runtime.fs.readFileSync(src), { presets: ['es2015', 'react'], sourceMaps: true });
     return {
       sourcemap: transform,
       code: transform.code
     };
   }, /\.jsx$/);
   
-  Loader.add('css', function(src) {
+  Transpiler.add('css', function(src) {
     var el = document.createElement('link');
     el.setAttribute('rel', 'stylesheet');
     el.setAttribute('type', 'text/css');
@@ -86,7 +86,7 @@ var Loader = {
     };
   }, /\.css$/);
   
-  Loader.add('html', function(src) {
+  Transpiler.add('html', function(src) {
     var doc, error;
     // check supports HTMLImports
     if( 'import' in document.createElement('link') ) {
@@ -116,7 +116,7 @@ var Loader = {
     };
   }, /\.html$/);
   
-  Loader.add('less', function(src) {
+  Transpiler.add('less', function(src) {
     var el = document.createElement('link');
     el.setAttribute('rel', 'stylesheet/less');
     el.setAttribute('href', src);
@@ -129,15 +129,15 @@ var Loader = {
     };
   }, /\.less$/);
   
-  Loader.add('scss', function(src) {
+  Transpiler.add('scss', function(src) {
     // TODO: scss
   }, /\.scss$/);
   
-  Loader.add('ts', function(src) {
+  Transpiler.add('ts', function(src) {
     // TODO: typescript, compiler 용량이 너무 크다.3M.문제.
   }, /\.ts$/);
   
-  Loader.add('coffee', function(src) {
+  Transpiler.add('coffee', function(src) {
     // TODO: coffeescript
   }, /\.coffee$/);
 })();
@@ -147,5 +147,5 @@ module.exports = {
   runtime: function(o) {
     runtime = o;
   },
-  loader: Loader
+  transpilers: Transpiler
 };

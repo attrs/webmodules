@@ -8,22 +8,12 @@
     }
   };
   
-  function __evaluate(script, src, exports, strict) {
+  function __evaluate(script, src, exports) {
     var __evaluate = window.__evaluate;
     if( typeof exports === 'string' ) script += '\nmodule.exports = ' + exports + ';';
-    script = '/* ' + (src ? src : window.location.path) + ' */\
-    script = window && window.script, src = window && window.src, strict = window && window.strict, \
-    (function(exports, require, module, __filename, __dirname, global) { ' + script + '\n});';
-    
-    if( strict ) {
-      var module;
-      (function() {
-        var window = undefined, document = undefined, location = undefined, history = undefined;
-        module = eval(script);
-      })();
-      return module;
-    }
-    return eval(script);
+    return eval('/* ' + (src ? src : window.location.path) + ' */\
+    script = window.script, src = window.src, \
+    (function(exports, require, module, __filename, __dirname, global) { ' + script + '\n});');
   }
   
   (function() {
@@ -106,7 +96,7 @@
           src = path.normalize(src);
           return files[src];
         },
-        load: function(src) {
+        readFileSync: function(src) {
           if( !src ) throw new Error(LABEL + 'missing src');
           var text = files[path.normalize(src)], error;
           if( text == null ) {
@@ -129,17 +119,17 @@
     function loader(src, type) {
       var exists, ext = path.extname(src).toLowerCase();
       if( webmodules ) {
-        if( type ) exists = webmodules.loader.get(type) ? true : false;
-        else exists = webmodules.loader.exists(src);
+        if( type ) exists = webmodules.transpilers.get(type) ? true : false;
+        else exists = webmodules.transpilers.exists(src);
         
         if( !exists && !~['.js', '.json'].indexOf(ext) ) {
           console.warn(LABEL + 'unsupported type \'' + path.extname(src) + '\'', src);
         }
       }
       
-      if( exists ) return webmodules.loader.load(src, type);
-      else if( ext === '.json' ) return { exports: JSON.parse(fs.load(src)) };
-      else return { code: fs.load(src) };
+      if( exists ) return webmodules.transpilers.transpile(src, type);
+      else if( ext === '.json' ) return { exports: JSON.parse(fs.readFileSync(src)) };
+      else return { code: fs.readFileSync(src) };
     }
     
     var cwd = path.normalize('.');
@@ -168,29 +158,6 @@
       console.info(LABEL + 'webmodules dir', webmodulesdir);
       console.info(LABEL + 'base pacakge', path.join(path.dirname(currentScript.src), '..', '..'), basePackage);
     }
-    
-    /*console.log(path.join('a', 'b', 'c'));
-    console.log(path.join('a', '/b/', '/c'));
-    console.log(path.join('/a', '/b/', '/c'));
-    console.log(path.join('/a', '/b/', '/c/'));
-    console.log(path.normalize('/../a/b/c/../index.js'));
-    console.log(path.dirname(path.normalize('/../a/b/c/../index.js')));
-    console.log(path.filename(path.normalize('/../a/b/c/../index.js')));
-    
-    console.log('endswith', endsWith('testat.js', '.js'));
-    console.log('endswith', endsWith('testat.js', 's'));
-    console.log('endswith', endsWith('testat.js', 'a'));
-    console.log('endswith', endsWith('testat.js', 'testat.js'));
-    console.log('endswith', endsWith('testat.js', 'estat.js'));
-    
-    console.log('.html', path.extname('index.html')); // returns '.html'
-    console.log('.md', path.extname('index.coffee.md')); // returns '.md'
-    console.log('.', path.extname('index.')); // returns '.'
-    console.log('(empty)', path.extname('index')); // returns ''
-    console.log('(empty)', path.extname('.index')); // return ''
-    console.log('(empty)', path.extname('.index.js')); // return ''
-    */
-    
     
     function isFile(src) {
       return endsWith(src.toLowerCase(), '.js') || endsWith(src.toLowerCase(), '.json');
@@ -253,7 +220,6 @@
       return src;
     }
     
-    // commonjs implementation
     var externals = {}, internalpkgs = [];
     function defineExternal(name, src, options) {
       if( !name ) throw new TypeError(LABEL + 'missing name');
@@ -282,11 +248,11 @@
       return this;
     }
     
-    function evaluate(script, src, exports, strict) {
-      return __evaluate(script, src, exports, strict);
+    function evaluate(script, src, exports) {
+      return __evaluate(script, src, exports);
     }
     
-    function exec(fn, filename) {
+    function exec(fn, filename, caller) {
       if( typeof fn !== 'function' ) throw new TypeError(LABEL + 'exec: module must be a function');
       if( !filename ) throw new TypeError(LABEL + 'exec: missing filename');
       
@@ -314,7 +280,7 @@
         }
       */
       
-      var module = {parent:{}};
+      var module = {parent: caller, loaded: false};
       var exports = module.exports = {};
       var global = window;
       var __filename = filename;
@@ -329,6 +295,7 @@
         dirname: __dirname
       });
       fn.call(exports, exports, require, module, __filename, __dirname, global);
+      module.loaded = true;
       events.fire('exec', {
         fn: fn,
         exports: exports,
@@ -368,7 +335,7 @@
       if( loaded.exports ) {
         return cache[src] = loaded.exports;
       } else if( loaded.code ) {
-        var fn = evaluate(loaded.code, src, options && options.exports, options && options.strict);
+        var fn = evaluate(loaded.code, src, options && options.exports);
         return cache[src] = exec(fn, src);
       } else {
         throw new Error(LABEL + 'load error: ' + src);
@@ -621,7 +588,6 @@
         var name = el.getAttribute('data-as');
         var script = el.textContent || el.innerText;
         var exec = el.hasAttribute('data-exec');
-        var strict = el.hasAttribute('data-strict');
         
         var exports = el.getAttribute('data-exports');
         var isPackage = el.hasAttribute('data-package') || el.hasAttribute('data-module'); // deprecated : data-module
@@ -639,7 +605,7 @@
           WebModules.defineExternal(name, src, {exports: exports, isPackage: isPackage});
           if( exec ) WebModules.require(name);
         } else {
-          WebModules.load(src, {strict:strict});
+          WebModules.load(src);
         }
       }
       
