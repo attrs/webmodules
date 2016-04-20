@@ -21,8 +21,7 @@
   ],
   "homepage": "https://github.com/attrs/webmodules",
   "ignore": [
-    "**/.*",
-    "node_modules",
+    "**/.*"
     "bower_components",
     "gulpfile.js",
     "test",
