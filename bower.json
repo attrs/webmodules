@@ -23,6 +23,7 @@
   "ignore": [
     "**/.*",
     "bower_components",
+    "npm-shrinkwrap.js",
     "gulpfile.js",
     "test",
     "tests",
