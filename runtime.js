@@ -113,11 +113,11 @@
             var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
             xhr.open('GET', src, false);
             xhr.onreadystatechange = function(e) {
-              if( this.readyState == 4 && this.status == 200 ) text = this.responseText;
+              if( this.readyState == 4 && (this.status === 0 || (this.status >= 200 && this.status < 300) ) ) text = this.responseText;
               else error = this.responseText;
             };
             xhr.send();
-        
+            
             if( error ) throw new Error('Cannot find module \'' + src + '\': ' + error);
             text = text.split('//# sourceMappingURL=').join('//'); // TODO: validate sourcemap URL
           }
@@ -160,9 +160,14 @@
         }
       };
     })();
-    var debug = config('debug') === 'true' ? true : false;
     
-    if( debug ) console.log(LABEL + 'base pacakge', path.join(path.dirname(currentScript.src), '..', '..'), basePackage);
+    var debug = config('debug') === 'true' ? true : false;
+    var webmodulesdir = path.dirname(path.normalize(currentScript.src));
+    
+    if( debug ) {
+      console.info(LABEL + 'webmodules dir', webmodulesdir);
+      console.info(LABEL + 'base pacakge', path.join(path.dirname(currentScript.src), '..', '..'), basePackage);
+    }
     
     /*console.log(path.join('a', 'b', 'c'));
     console.log(path.join('a', '/b/', '/c'));
@@ -460,12 +465,15 @@
     }
     
     function getPackage(src) {
+      if( debug ) console.log(LABEL + 'get package', src);
       var paths = src.split('/');
       if( ~paths.indexOf(WEB_MODULES) || ~paths.indexOf(NODE_MODULES) ) {
         var pos = paths.lastIndexOf(WEB_MODULES);
         if( paths.lastIndexOf(NODE_MODULES) > pos ) pos = paths.lastIndexOf(NODE_MODULES);
         var dir = paths.slice(0, pos + 2).join('/');
         return loadPackage(dir);
+      } else if( src.indexOf(webmodulesdir) === 0 ) { // when src is webmodules package
+        return loadPackage(webmodulesdir);
       }
       return basePackage;
     }
@@ -660,7 +668,7 @@
         if( externals['process'] ) process = WebModules.require('process');
         
         // load self webmodules for use loader
-        webmodules = WebModules.require(path.filename(path.dirname(currentScript.src)));
+        webmodules = WebModules.require(path.filename(webmodulesdir));
         webmodules.runtime(WebModules);
       })();
       
