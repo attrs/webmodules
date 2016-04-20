@@ -590,14 +590,6 @@
       off: events.off
     };
     
-    // default bootstrap module loading
-    WebModules.bootstrap(path.join(path.dirname(currentScript.src), NODE_MODULES, 'node-libs-browser'));
-    if( externals['process'] ) process = WebModules.require('process');
-    
-    // load self
-    webmodules = WebModules.require(path.filename(path.dirname(currentScript.src)));
-    webmodules.runtime(WebModules);
-    
     // exports to global & scanning
     (function() {
       var require = typeof window.require === 'function' ? window.require : null;
@@ -643,21 +635,38 @@
         }
       }
       
-      // scan
-      WebModules.scan = function() {
-        var doc = document.currentScript && document.currentScript.ownerDocument || document;
-        
-        // put env
-        [].forEach.call(doc.querySelectorAll('meta[name^="webmodules.env."]'), function(el) {
+      // bootstraping
+      (function() {
+        // put env defined via meta tag
+        [].forEach.call(document.querySelectorAll('meta[name^="webmodules.env."]'), function(el) {
           var name = el.getAttribute('name');
           var content = el.getAttribute('content');
           process.env[name.substring(15)] = content;
         });
         
         // bootstrap
-        [].forEach.call(doc.querySelectorAll('script[type$="/commonjs"][data-bootstrap]'), function(el) {
-          resolve(el);
-        });
+        var bootstrapscripts = document.querySelectorAll('script[type$="/commonjs"][data-bootstrap]');
+        if( bootstrapscripts.length ) {
+          // load defined bootstrap instead default bootstrap package
+          [].forEach.call(bootstrapscripts, function(el) {
+            resolve(el);
+          });
+        } else {
+          // load default bootstrap package (webmodules/node_modules/node-libs-browser)
+          WebModules.bootstrap(path.join(path.dirname(currentScript.src), NODE_MODULES, 'node-libs-browser'));
+        }
+        
+        // bind process to global if exists 'process' pacakage in bootstrap
+        if( externals['process'] ) process = WebModules.require('process');
+        
+        // load self webmodules for use loader
+        webmodules = WebModules.require(path.filename(path.dirname(currentScript.src)));
+        webmodules.runtime(WebModules);
+      })();
+      
+      // scan
+      WebModules.scan = function() {
+        var doc = document.currentScript && document.currentScript.ownerDocument || document;
         
         // modules
         [].forEach.call(doc.querySelectorAll('script[type$="/commonjs"]'), function(el) {
