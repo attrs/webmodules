@@ -1,5 +1,13 @@
 (function() {
-  var process;
+  var process = {
+    nextTick: function(fn) {
+      setTimeout(fn, 0);
+    },
+    env: {
+      NODE_ENV: 'development'
+    }
+  };
+  
   function __evaluate(script, src, exports, strict) {
     var __evaluate = window.__evaluate;
     if( typeof exports === 'string' ) script += '\nmodule.exports = ' + exports + ';';
@@ -582,10 +590,12 @@
       off: events.off
     };
     
-    // bootstrap module loading
+    // default bootstrap module loading
     WebModules.bootstrap(path.join(path.dirname(currentScript.src), NODE_MODULES, 'node-libs-browser'));
-    process = WebModules.require('process');
-    webmodules = WebModules.require('webmodules');
+    if( externals['process'] ) process = WebModules.require('process');
+    
+    // load self
+    webmodules = WebModules.require(path.filename(path.dirname(currentScript.src)));
     webmodules.runtime(WebModules);
     
     // exports to global & scanning
