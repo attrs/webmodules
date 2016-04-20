@@ -14,6 +14,7 @@ logs
 results
 
 npm-debug.log
+bower_components
 
 /examples/*/node_modules/
 /examples/*/web_modules/
