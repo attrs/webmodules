@@ -130,7 +130,7 @@ var Transpiler = {
       else style.innerHTML = result.css;
       
       if( document.head ) document.head.appendChild(style);
-      else console.error('[webmodules] illegal state, where does document.head go away?');
+      else console.error('[webmodules] less transpiler, where does document.head go away?');
     });
     
     return {
