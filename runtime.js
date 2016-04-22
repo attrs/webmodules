@@ -146,7 +146,9 @@
         pkgdir: pkgdir,
         manifest: {
           name: name,
-          version: version
+          version: version,
+          _files: [],
+          _directories: []
         }
       };
     })();
@@ -208,17 +210,6 @@
         off: off
       }
     })();
-    
-    function validateFilename(src) {
-      // - nodejs 의 경우, require('./file') 의 경우 file.js 가 있을 경우 file.js 를 의미하고 디렉토리일경우 ./file/index.js 를
-      // 의미하지만, 브라우저 상태에서는 체크할 수 없으므로 package.json 설치시 TODO 파일맵을 만들어서 체크하기 전까지
-      // '/' 로 끝날 경우엔 index.js 를 붙여주고 아닌경우 .js 로 해석하기로 한다.
-      // 덧붙여, nodejs 의 경우 test.js 와 test/index.js 가 있을 경우 require('./test') 시 test.js 에 우선권을 준다.
-      if( endsWith(src, '/') ) src = src + 'index.js';
-      //if( !isSupportedFile(src) ) src = src + '.js';
-      if( !path.extname(src) ) src = src + '.js';
-      return src;
-    }
     
     var externals = {}, internalpkgs = [];
     function defineExternal(name, src, options) {
@@ -416,9 +407,6 @@
       // main 확정
       main = path.normalize(path.join(dir, main || 'index.js'));
       
-      // TODO: check file exists, package.json 의 _files 와 _directories 를 기준으로 체크한다.
-      // _files 혹은 _directories 가 지정되지 않았을 경우 존재하는 것으로 간주한다.
-      
       var pkg = packageCache[dir] = {
         name: manifest.name,
         version: manifest.version,
@@ -443,6 +431,27 @@
         return loadPackage(webmodulesdir);
       }
       return basePackage;
+    }
+    
+    function validateFilename(src) {
+      if( endsWith(src, '/') ) return src + 'index.js';
+      
+      var pkg = getPackage(src);
+      var relpath = src.substring(pkg.dir.length);
+      
+      // require('./file') 의 경우 file.js 가 있을 경우 file.js 를 의미하고 디렉토리일경우 ./file/index.js 를
+      // 의미한다(nodejs기준)
+      // 브라우저에서는 파일존재를 체크할 수 없으므로 wpm 으로 설치시 입력된 package.json/_files, _directories 배열을
+      // 참고해서 해석한다. 해당 필드가 존재하지 않는 경우, 확장자가 없을때는 file.js 를 기본으로 한다.
+      // nodejs 와 동일하게 file.js 와 file/index.js 가 동시에 있을 경우 파일(test.js)에 우선권을 준다.
+      // TODO: _files 필드가 없을땐 여러번의 요청을 날려서 파일 존재여부를 확인하는 편이 더 나을지도 모르겠다.
+      if( pkg.manifest._files ) {
+        if( ~pkg.manifest._files.indexOf(relpath) ) return src;
+        else if( ~pkg.manifest._files.indexOf(relpath + '.js') ) return src + '.js';
+        else if( ~pkg.manifest._directories.indexOf(relpath) ) return src + '/index.js';
+      }
+      
+      return path.extname(src) ? src : src + '.js';
     }
     
     function createRequire(dir) {
