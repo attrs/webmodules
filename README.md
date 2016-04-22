@@ -1,5 +1,7 @@
 # webmodules
 
+[![Join the chat at https://gitter.im/attrs/webmodules](https://badges.gitter.im/attrs/webmodules.svg)](https://gitter.im/attrs/webmodules?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 [![NPM Version][npm-version]][npm-url] [![NPM Downloads][npm-total]][npm-url] [![NPM Downloads][npm-month]][npm-url] [![NPM Downloads][license]][npm-url]
 
 [npm-version]: https://img.shields.io/npm/v/webmodules.svg?style=flat
