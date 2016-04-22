@@ -117,15 +117,24 @@ var Transpiler = {
   }, /\.html$/);
   
   Transpiler.add('less', function(src) {
-    var el = document.createElement('link');
-    el.setAttribute('rel', 'stylesheet/less');
-    el.setAttribute('href', src);
-    document.head.appendChild(el);
+    var less = require('less/lib/less-browser/index.js')(window, {});
+    var options = {
+      filename: src.replace(/#.*$/, '')
+    };
     
-    require('less').refresh();
-  
+    var style = document.createElement('style');
+    style.type = 'text/css';
+      
+    less.render(runtime.fs.readFileSync(src), options).then(function(result) {
+      if (style.styleSheet) style.styleSheet.cssText = result.css;
+      else style.innerHTML = result.css;
+      
+      if( document.head ) document.head.appendChild(style);
+      else console.error('[webmodules] illegal state, where does document.head go away?');
+    });
+    
     return {
-      exports: el
+      exports: style
     };
   }, /\.less$/);
   

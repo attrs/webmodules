@@ -22,3 +22,6 @@ bower_components
 /node_modules/*
 !/node_modules/node-libs-browser/
 !/node_modules/babel-standalone/
+!/node_modules/less/
+!/node_modules/coffee-script/
+!/node_modules/x-include/
