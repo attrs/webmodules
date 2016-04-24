@@ -75,14 +75,19 @@ var Transpiler = {
   }, /\.jsx$/);
   
   Transpiler.add('css', function(src) {
-    var el = document.createElement('link');
-    el.setAttribute('rel', 'stylesheet');
-    el.setAttribute('type', 'text/css');
-    el.setAttribute('href', src);
-    document.head.appendChild(el);
-  
+    var style = document.createElement('link');
+    style.setAttribute('rel', 'stylesheet');
+    style.setAttribute('type', 'text/css');
+    // TODO: replace @import paths
+    var css = runtime.fs.readFileSync(src);
+    if (style.styleSheet) style.styleSheet.cssText = css;
+    else style.innerHTML = css;
+    
+    if( document.head ) document.head.appendChild(style);
+    else console.error('[webmodules] css transpiler, where does document.head go away?');
+    
     return {
-      exports: el
+      exports: style
     };
   }, /\.css$/);
   
@@ -138,6 +143,17 @@ var Transpiler = {
     };
   }, /\.less$/);
   
+  Transpiler.add('coffee', function(src) {
+    //var coffee = require('coffee-script/lib/coffee-script/browser.js');
+    var coffee = require('coffee-script');
+    var compiled = coffee.compile(runtime.fs.readFileSync(src), {bare:true, header:true, sourceMap:true});
+    
+    return {
+      code: compiled.js,
+      sourcemap: compiled.v3SourceMap
+    };
+  }, /\.coffee$/);
+  
   Transpiler.add('scss', function(src) {
     // TODO: scss
   }, /\.scss$/);
@@ -145,10 +161,6 @@ var Transpiler = {
   Transpiler.add('ts', function(src) {
     // TODO: typescript, compiler 용량이 너무 크다.3M.문제.
   }, /\.ts$/);
-  
-  Transpiler.add('coffee', function(src) {
-    // TODO: coffeescript
-  }, /\.coffee$/);
 })();
 
 
