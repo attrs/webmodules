@@ -9,3 +9,6 @@ express()
     console.log('httpd listening on port 9000');
   });
   
+  
+  //console.log(require.cache, Object.keys(require));
+  //console.log(require.main);

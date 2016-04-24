@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>webmodules example</title>
+  <meta charset="utf-8">
+  <meta name="webmodules.debug" content="false">
+  <meta name="webmodules.package.name" content="example">
+  <meta name="webmodules.package.version" content="0.0.0">
+  <meta name="webmodules.env.NAME" content="value">
+  <meta name="webmodules.env.NODE_ENV" content="development">
+  
+  <script type="text/commonjs" data-type="coffee">
+    console.log require './js/test/script.coffee'
+  </script>
+  <script src="/web_modules/webmodules/runtime.js"></script>
+</head>
+<body>
+  <div id="content">test</div>
+</body>
+</html>
