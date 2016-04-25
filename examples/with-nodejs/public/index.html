@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>webmodules example</title>
+  <meta charset="utf-8">
+  <meta name="webmodules.debug" content="false">
+  <meta name="webmodules.package.name" content="example">
+  <meta name="webmodules.package.version" content="0.0.0">
+  <meta name="webmodules.env.NAME" content="value">
+  <meta name="webmodules.env.NODE_ENV" content="development">
+  
+  <script type="text/commonjs" data-src="/web_modules/jquery" data-as="jquery" data-package></script>
+  <script type="text/commonjs" data-src="/web_modules/moment" data-as="moment" data-package></script>
+  <script type="text/commonjs" data-src="js/custom.js" data-as="custom"></script>
+  <script type="text/commonjs" data-exports="window" data-as="window"></script>
+  <script type="text/commonjs" data-as="document">
+    module.exports = document;
+  </script>
+  
+  <script type="text/commonjs">
+    var path = require('path');
+    var jquery = require('jquery');
+    var custom = require('custom');
+    var w = require('window');
+    var d = require('document');
+    
+    console.log('in html', __dirname, __filename);
+    console.log('jquery', jquery);
+    console.log('custom', custom);
+    console.log('window', w);
+    console.log('document', d);
+  </script>
+  <script type="text/commonjs" data-src="js/app.js"></script>
+  <script src="/web_modules/webmodules/runtime.js"></script>
+</head>
+<body>
+  <div id="content"></div>
+  <div id="react"></div>
+  <div id="react-es2015"></div>
+  <hello-world></hello-world>
+</body>
+</html>

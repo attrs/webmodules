@@ -1,0 +1,14 @@
+{
+  "name": "webmodules-examples-bower",
+  "authors": [
+    "joje <joje.attrs@gmail.com>"
+  ],
+  "description": "",
+  "main": "",
+  "license": "MIT",
+  "homepage": "",
+  "dependencies": {
+    "react": "^15.0.1",
+    "webmodules": "^0.0.20"
+  }
+}
