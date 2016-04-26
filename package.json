@@ -1,6 +1,6 @@
 {
   "name": "webmodules",
-  "version": "0.0.22",
+  "version": "0.1.0",
   "description": "webmodules",
   "main": "lib/index.js",
   "browser": "browser/index.js",
@@ -24,6 +24,7 @@
     "less": "^2.6.1",
     "node-libs-browser": "^1.0.0",
     "npm": "^3.8.6",
+    "open": "0.0.5",
     "semver": "^5.1.0",
     "serve-static": "^1.10.2",
     "x-include": "^0.0.3"

@@ -3,6 +3,7 @@
 var chalk = require('chalk');
 var commander = require('commander');
 var async = require('async');
+var open = require('open');
 
 var pkg = require('../package.json');
 var lib = require('../');
@@ -81,6 +82,50 @@ commander
     console.log('  Examples:');
     console.log();
     console.log('  $ wpm init');
+    console.log();
+  });
+
+commander
+  .command('up [port] [docbase]')
+  .description('Start Server')
+  .option('-s, --self', 'self reference mode')
+  .option('-o, --open [value]', 'open in browser')
+  .action(function(port, docbase, options) {
+    var host;
+    
+    if( port && ~port.indexOf(':') ) {
+      host = port.substring(0, port.indexOf(':'));
+      port = port.substring(port.indexOf(':') + 1);
+    }
+    
+    if( !docbase && isNaN(+port) ) docbase = port, port = null;
+    
+    lib.commands.up({
+      host: host,
+      port: +port || 0,
+      docbase: docbase,
+      selfref: options.self ? true : false
+    }, function(err, httpd) {
+      if( err ) return error(err);
+      
+      console.log(chalk.cyan('docbase is'), httpd.docbase);
+      console.log(chalk.cyan('httpd listening at'), httpd.address.address + ':' + httpd.address.port);
+      if( options.open ) {
+        open(
+          'http://' + (httpd.address.address === '0.0.0.0' ? 'localhost' : httpd.address.address) + ':' + httpd.address.port, 
+          typeof options.open === 'string' ? options.open : null
+        );
+      }
+    });
+  })
+  .on('--help', function() {
+    console.log('  Examples:');
+    console.log();
+    console.log('  $ wpm up');
+    console.log('  $ wpm up 8080');
+    console.log('  $ wpm up 8080 ./public');
+    console.log('  $ wpm up 8080 ./public -s');
+    console.log('  $ wpm up 8080 ./public -s -o');
     console.log();
   });
 

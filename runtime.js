@@ -58,9 +58,16 @@
         });
         return filepath;
       },
-      normalize: function(src, doc) {
-        if( !src || typeof src !== 'string' ) src = (doc || document).URL;
-        var a = (doc || document).createElement('a');
+      normalize: function(src) {
+        if( typeof src !== 'string' ) throw new TypeError('Path must be a string. Received ' + src);
+        if( !src ) return '.';
+        var a = document.createElement('a');
+        a.href = src || '';
+        return a.pathname;
+      },
+      resolve: function() {
+        var src = this.join.apply(this, arguments);
+        var a = document.createElement('a');
         a.href = src || '';
         return a.pathname;
       },
@@ -85,21 +92,16 @@
       var files = {};
       
       return {
-        write: function(src, contents) {
+        writeFileSync: function(src, contents) {
           src = path.normalize(src);
           if( debug ) console.log(LABEL + 'fs write', src);
           files[src] = contents;
           return this;
         },
-        read: function(src) {
-          if( !src ) return null;
-          src = path.normalize(src);
-          return files[src];
-        },
         readFileSync: function(src) {
           if( !src ) throw new Error(LABEL + 'missing src');
           var text = files[path.normalize(src)], error;
-          if( text == null ) {
+          if( typeof text !== 'string' ) {
             var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
             xhr.open('GET', src, false);
             xhr.onreadystatechange = function(e) {
@@ -116,25 +118,45 @@
       }
     })();
     
-    function loader(src, type) {
-      var exists, ext = path.extname(src).toLowerCase();
-      if( webmodules ) {
-        if( type ) exists = webmodules.transpilers.get(type) ? true : false;
-        else exists = webmodules.transpilers.exists(src);
-        
-        if( !exists && !~['.js', '.json'].indexOf(ext) ) {
-          console.warn(LABEL + 'unsupported type \'' + path.extname(src) + '\'', src);
-        }
-      }
+    var loader = (function() {
+      var mapping = {};
       
-      if( exists ) return webmodules.transpilers.transpile(src, type);
-      else if( ext === '.json' ) return { exports: JSON.parse(fs.readFileSync(src)) };
-      else return { code: fs.readFileSync(src) };
-    }
+      var loader = function(src, type) {
+        var extension = path.extname(src).toLowerCase();
+        var mapped = mapping[src];
+        var transpiler;
+        
+        if( webmodules ) {
+          var byExtension = webmodules.transpilers.findByExtension(extension);
+          if( mapped ) {
+            transpiler = webmodules.transpilers.find(mapped);
+          } else if( byExtension ) {
+            transpiler = byExtension;
+          }
+        }
+        
+        if( transpiler ) {
+          return transpiler.transpile(src);
+        } else {
+          if( !~['.js', '.json'].indexOf(extension) )
+            console.warn(LABEL + 'unsupported type \'' + path.extname(src) + '\'', src);
+          
+          if( extension === '.json' ) return { exports: JSON.parse(fs.readFileSync(src)) };
+          else return { code: fs.readFileSync(src) };
+        }
+      };
+      
+      loader.mapping = function(src, transpiler) {
+        console.log('mapping', src, transpiler);
+        mapping[path.normalize(src)] = transpiler;
+      };
+      
+      return loader;
+    })();
     
     var cwd = path.normalize('.');
     var basePackage = (function() {
-      var name = config('package.name') || path.filename(path.normalize()) || 'index.html';
+      var name = config('package.name') || path.filename(document.URL) || 'index.html';
       var version = config('package.version') || '0.0.0';
       var pkgdir = path.normalize(path.join(path.dirname(currentScript.src), '..'));
       var dir = path.normalize(path.join(pkgdir, '..'));
@@ -211,39 +233,37 @@
       }
     })();
     
-    var externals = {}, internalpkgs = [];
-    function defineExternal(name, src, options) {
-      if( !name ) throw new TypeError(LABEL + 'missing name');
-      if( typeof name !== 'string' ) throw new TypeError(LABEL + 'name must be a string');
-      
-      options = options || {};
-      if( debug ) console.log(LABEL + 'external', name, src, options.isPackage ? 'package' : 'module');
-      
-      externals[name] = {
-        src: src,
-        isPackage: options.isPackage
-      }
-      
-      return this;
-    }
     
-    function bootstrap(src) {
-      var result = load(src);
-      if( debug ) console.log(LABEL + 'bootstrap', src, result);
-      for( var k in result ) {
-        if( result.hasOwnProperty(k) ) {
-          internalpkgs.push(k);
-          if( result[k] ) defineExternal(k, result[k]);
-        }
+    var libs = {
+      define: function(name, config) {
+        if( !name ) throw new Error(LABEL + 'define library: missing name');
+        if( typeof config === 'string' ) config = {src:config};
+        if( !(config.src || config.exports) ) throw new Error(LABEL + 'define library: config object must contains src or exports');
+        if( debug ) console.log(LABEL + 'define library', name, config);
+        libs[name] = config;
+        return libs;
+      },
+      get: function(name) {
+        return libs[name];
+      },
+      remove: function(name) {
+        delete libs[name];
+        return libs;
+      },
+      load: function(name) {
+        var lib = libs[name];
+        if( !lib ) throw new Error(LABEL + 'Cannot find library \'' + name + '\'');
+        if( lib && lib.exports ) return {exports: lib.exports};
+        if( lib && lib.module ) return lib.module;
+        return lib.module = load(lib.src);
       }
-      return this;
-    }
+    };
     
     function evaluate(script, src, exports) {
       return __evaluate(script, src, exports);
     }
     
-    function exec(fn, filename, caller) {
+    /*function exec(fn, filename, caller) {
       if( typeof fn !== 'function' ) throw new TypeError(LABEL + 'exec: module must be a function');
       if( !filename ) throw new TypeError(LABEL + 'exec: missing filename');
       
@@ -269,7 +289,7 @@
            '/Volumes/node_modules',
            '/node_modules' ]
         }
-      */
+      /
       
       var module = {parent: caller, loaded: false};
       var exports = module.exports = {};
@@ -295,43 +315,7 @@
         dirname: __dirname
       });
       return module.exports || exports || {};
-    }
-
-    var cache = {};
-    function load(src, options) {
-      if( !src ) throw new TypeError(LABEL + 'missing src');
-      if( typeof src !== 'string' ) throw new TypeError(LABEL + 'src must be a string');
-      
-      src = path.normalize(src);
-      if( cache[src] ) return cache[src];
-      
-      // find src's module
-      var pkg = getPackage(src);
-      if( debug ) console.log(LABEL + 'load', src, pkg.name);
-      
-      if( pkg.dir === src ) src = pkg.main;
-      
-      var url = src;
-      
-      // browserify: https://github.com/substack/browserify-handbook#browser-field
-      if( pkg.aliases ) {
-        // src 가 다른 모듈로 swap 설정되어 있다면 실제 load 할 url 을 바꾼다.
-        var alias = pkg.aliases[src];
-        if( alias === false ) throw new Error(LABEL + 'sub module \'' + src + '\' is ignored: ' + pkg.name);
-        else if( alias && typeof alias === 'string' ) url = alias;
-        if( debug ) console.info(LABEL + 'alias find', src, alias, pkg.manifest.browser);
-      }
-      
-      var loaded = loader(url);
-      if( loaded.exports ) {
-        return cache[src] = loaded.exports;
-      } else if( loaded.code ) {
-        var fn = evaluate(loaded.code, src, options && options.exports);
-        return cache[src] = exec(fn, src);
-      } else {
-        throw new Error(LABEL + 'load error: ' + src);
-      }
-    }
+    }*/
     
     var packageCache = {};
     function loadPackage(src) {
@@ -375,7 +359,7 @@
           
           for(var k in manifest.browser) {
             var v = manifest.browser[k];
-            if( bpd[k] || pd[k] || bdep[k] || dep[k] || ~internalpkgs.indexOf(k) || typeof v !== 'string' ) {
+            if( bpd[k] || pd[k] || bdep[k] || dep[k] || ~libs[k] || typeof v !== 'string' ) {
               if( debug ) console.info(LABEL + 'swap package', k, v, manifest);
             } else {
               if( debug ) console.info(LABEL + 'swap file', k, v, manifest);
@@ -454,9 +438,65 @@
       return path.extname(src) ? src : src + '.js';
     }
     
-    function createRequire(dir) {
-      if( !dir ) throw new Error(LABEL + 'create require: missing dir');
+    var cache = {};
+    function load(src, caller) {
+      if( !src ) throw new TypeError(LABEL + 'missing src');
+      if( typeof src !== 'string' ) throw new TypeError(LABEL + 'src must be a string');
+      
+      if( debug ) console.info(LABEL + 'load', src, libs[src] ? 'library' : 'file');
+      if( libs[src] ) {
+        return libs.load(src);
+      }
+      
+      src = path.normalize(src);
+      if( cache[src] ) return cache[src];
+      
+      // find src's module
+      var pkg = getPackage(src);
+      if( debug ) console.log(LABEL + 'load', src, pkg.name);
+      if( pkg.dir === src ) src = pkg.main;
+      
+      // browserify: https://github.com/substack/browserify-handbook#browser-field
+      // src 가 다른 모듈로 swap 설정되어 있다면 실제 load 할 url 을 바꾼다. 즉, src 가 실제 파일의 url 이 아닐 수도 있다는 거.
+      var url = src;
+      if( pkg.aliases ) {
+        var alias = pkg.aliases[src];
+        if( alias === false ) throw new Error(LABEL + 'sub module \'' + src + '\' is ignored: ' + pkg.name);
+        else if( alias && typeof alias === 'string' ) url = alias;
+        if( debug ) console.info(LABEL + 'alias find', src, alias, pkg.manifest.browser);
+      }
+      
+      // create module object
+      var module = {
+        id: src,
+        filename: url,
+        exports: {},
+        parent: caller,
+        loaded: false,
+        children: [],
+        paths: []
+      };
+      module.require = createRequire(module);
+      
+      var loaded = loader(url);
+      if( loaded.exports ) {
+        module.exports = loaded.exports;
+      } else if( typeof loaded.code === 'string' ) {
+        evaluate(loaded.code, url).call(module.exports, module.exports, module.require, module, url, path.dirname(url), window);
+      } else {
+        throw new Error(LABEL + 'load error(null exports or code): ' + src);
+      }
+      
+      module.loaded = true;
+      return cache[module.id] = module;
+    }
+    
+    function createRequire(module) {
+      var filename = module && module.filename;
+      var dir = filename ? path.dirname(filename) : basePackage.dir;
       var pkg = getPackage(dir);
+      
+      //console.info('create require', module, filename, dir, pkg.name);
       
       if( debug ) console.log(LABEL + 'create require', dir, pkg.name);
       function getSubPackage(name) {
@@ -472,29 +512,22 @@
           else if( alias && typeof alias === 'string' ) name = alias;
         }
         
-        var ext = externals[name];
-        if( ext ) {
-          if( debug ) console.log(LABEL + '\'' + name + '\' is external pacakge', ext);
-          if( ext.isPackage ) subpkgdir = ext.src;
-          else return ext.src;
+        var manifest = pkg.manifest || {};
+        var bpd = manifest.browserPeerDependencies;
+        var pd = manifest.peerDependencies;
+        var bdep = manifest.browserDependencies;
+        var dep = manifest.dependencies;
+        
+        if( bpd && bpd[name] ) {
+          subpkgdir = path.join(basePackage.pkgdir, name);
+        } else if( pd && pd[name] ) {
+          subpkgdir = path.join(basePackage.pkgdir, name);
+        } else if( bdep && bdep[name] ) {
+          subpkgdir = pkg.pkgdir ? path.join(pkg.pkgdir, name) : path.join(pkg.dir, WEB_MODULES, name);
+        } else if( dep && dep[name] ) {
+          subpkgdir = pkg.pkgdir ? path.join(pkg.pkgdir, name) : path.join(pkg.dir, NODE_MODULES, name);
         } else {
-          var manifest = pkg.manifest || {};
-          var bpd = manifest.browserPeerDependencies;
-          var pd = manifest.peerDependencies;
-          var bdep = manifest.browserDependencies;
-          var dep = manifest.dependencies;
-          
-          if( bpd && bpd[name] ) {
-            subpkgdir = path.join(basePackage.pkgdir, name);
-          } else if( pd && pd[name] ) {
-            subpkgdir = path.join(basePackage.pkgdir, name);
-          } else if( bdep && bdep[name] ) {
-            subpkgdir = pkg.pkgdir ? path.join(pkg.pkgdir, name) : path.join(pkg.dir, WEB_MODULES, name);
-          } else if( dep && dep[name] ) {
-            subpkgdir = pkg.pkgdir ? path.join(pkg.pkgdir, name) : path.join(pkg.dir, NODE_MODULES, name);
-          } else {
-            subpkgdir = pkg.pkgdir ? path.join(pkg.pkgdir, name) : path.join(pkg.dir, NODE_MODULES, name);
-          }
+          subpkgdir = pkg.pkgdir ? path.join(pkg.pkgdir, name) : path.join(pkg.dir, NODE_MODULES, name);
         }
         
         if( debug ) {
@@ -520,54 +553,52 @@
           filepath = path.normalize(src);
           srccase = 2;
         } else {
-          // sub module
+          var pkgname, subpath;
+          
           if( ~src.indexOf('/') ) {
-            var modulename = src.substring(0, src.indexOf('/'));
-            var subpath = src.substring(src.indexOf('/') + 1) || '';
-            var module = getSubPackage(modulename);
-            
-            if( typeof module === 'string' ) filepath = !subpath ? module : path.normalize(path.join(module, subpath));
-            else if( !subpath ) filepath = module.main;
-            else filepath = path.normalize(path.join(module.dir, subpath));
+            pkgname = src.substring(0, src.indexOf('/'));
+            subpath = src.substring(src.indexOf('/'));
             srccase = 3;
           } else {
-            var module = getSubPackage(src);
-            
-            if( typeof module === 'string' ) filepath = module;
-            else filepath = module.main;
+            pkgname = src;
             srccase = 4;
+          }
+          
+          if( libs[pkgname] ) { // when if pkg is defined library
+            if( subpath ) throw new Error('Cannot find module \'' + src + '\'');
+            return pkgname;
+          } else {
+            var pkg = getSubPackage(pkgname);
+            if( subpath ) filepath = path.normalize(path.join(pkg.dir, subpath));
+            else filepath = pkg.main;
           }
         }
         
-        if( !filepath ) throw new Error('Cannot find module \'' + src + ' \' : package.json main not defined');
         if( debug ) console.log(LABEL + 'resolve(' + srccase + ')', src, validateFilename(filepath));
-        
         return validateFilename(filepath);
       }
       
       function require(src) {
-        return load(resolve(src));
+        return load(resolve(src), module).exports;
       }
       
-      require.directory = dir;
-      require.package = pkg;
+      require.__directory = dir;
+      require.__package = pkg;
       require.resolve = resolve;
+      require.cache = cache;
       return require;
     }
     
     // pack webmodule
     var WebModules = {
-      require: createRequire(basePackage.dir, basePackage),
+      require: createRequire(),
       createRequire: createRequire,
-      bootstrap: bootstrap,
-      defineExternal: defineExternal,
       load: load,
       loadPackage: loadPackage,
       evaluate: evaluate,
-      exec: exec,
-      modules: cache,
+      cache: cache,
       packages: packageCache,
-      externals: externals,
+      libs: libs,
       fs: fs,
       on: events.on,
       once: events.once,
@@ -587,37 +618,6 @@
       window.require.resolve = WebModules.require.resolve;
       window.require.base = WebModules.require.base;
       
-      
-      function resolve(el) {
-        if( el.__webmodules_managed__ ) return;
-        el.__webmodules_managed__ = true;
-        var bootstrap = el.hasAttribute('data-bootstrap');
-        var src = el.getAttribute('data-src');
-        var filename = el.getAttribute('data-filename');
-        var name = el.getAttribute('data-as');
-        var script = el.textContent || el.innerText;
-        var exec = el.hasAttribute('data-exec');
-        
-        var exports = el.getAttribute('data-exports');
-        var isPackage = el.hasAttribute('data-package') || el.hasAttribute('data-module'); // deprecated : data-module
-        
-        if( !src ) {
-          // write to virtual fs
-          src = path.join(cwd, filename || ('script-' + Math.random() + '.js'));
-          WebModules.fs.write(src, script || '//empty module');
-        }
-        
-        if( bootstrap ) {
-          if( !src ) WebModules.bootstrap(src);
-          else WebModules.bootstrap(src);
-        } else if( name ) {
-          WebModules.defineExternal(name, src, {exports: exports, isPackage: isPackage});
-          if( exec ) WebModules.require(name);
-        } else {
-          WebModules.load(src);
-        }
-      }
-      
       // bootstraping
       (function() {
         // put env defined via meta tag
@@ -628,32 +628,95 @@
         });
         
         // bootstrap
-        var bootstrapscripts = document.querySelectorAll('script[type$="/commonjs"][data-bootstrap]');
-        if( bootstrapscripts.length ) {
-          // load defined bootstrap instead default bootstrap package
-          [].forEach.call(bootstrapscripts, function(el) {
-            resolve(el);
-          });
-        } else {
-          // load default bootstrap package (webmodules/node_modules/node-libs-browser)
-          WebModules.bootstrap(path.join(path.dirname(currentScript.src), NODE_MODULES, 'node-libs-browser'));
-        }
+        (function() {
+          // bind bundled fs, path (bootstrap 에 의해 대체되지 않으면 기본 path, fs 사용)
+          libs.define('fs', {exports:fs});
+          libs.define('path', {exports:path});
         
-        // bind process to global if exists 'process' pacakage in bootstrap
-        if( externals['process'] ) process = WebModules.require('process');
+          var bootstrapscripts = document.querySelectorAll('script[data-bootstrap]');
+          if( bootstrapscripts.length ) {
+            // load defined bootstrap instead default bootstrap package
+            [].forEach.call(bootstrapscripts, function(el) {
+              var type = el.type;
+              if( !type || type.toLowerCase() === 'text/javascript' ) return;
+              if( el.__webmodules_managed__ ) return;
+              el.__webmodules_managed__ = true;
+              
+              var src = el.getAttribute('data-src');
+              var script = el.textContent || el.innerText;
+              
+              if( !src ) {
+                // write to virtual fs
+                src = path.join(cwd, 'inline-' + Math.random() + '.js');
+                fs.writeFileSync(src, script || '');
+              }
+              
+              var result = WebModules.require(src);
+              if( debug ) console.log(LABEL + 'bootstrap', src, result);
+              for( var k in result ) libs.define(k, result[k]);
+            });
+          } else {
+            // load default bootstrap package (webmodules/node_modules/node-libs-browser)
+            var src = path.normalize(path.join(path.dirname(currentScript.src), NODE_MODULES, 'node-libs-browser'));
+            var pkg = WebModules.loadPackage(src);
+            var result = WebModules.require(pkg.main);
+            if( debug ) console.log(LABEL + 'bootstrap', src, result);
+            for( var k in result )
+              if( result[k] ) libs.define(k, result[k]);
+          }
+          
+          // bind process to global if exists 'process' pacakage in bootstrap
+          if( libs['process'] ) {
+            var env = process.env;
+            process = WebModules.require('process');
+            for(var k in env) process.env[k] = env[k];
+          }
+        })();
         
         // load self webmodules for use loader
         webmodules = WebModules.require(path.filename(webmodulesdir));
         webmodules.runtime(WebModules);
       })();
       
+      function handleScriptTag(el) {
+        var type = el.type;
+        if( !type || type.toLowerCase() === 'text/javascript' ) return;
+        if( el.__webmodules_managed__ ) return;
+        el.__webmodules_managed__ = true;
+        
+        var transpiler = webmodules.transpilers.findByMimeType(el.type.toLowerCase());
+        var src = el.getAttribute('data-src');
+        var name = el.getAttribute('data-as');
+        var script = el.textContent || el.innerText;
+        var exec = el.hasAttribute('data-exec');
+        
+        if( !src ) {
+          var extname = transpiler && transpiler.extensions ? transpiler.extensions[0] : '.js';
+          if( extname[0] !== '.' ) extname = '.' + extname;
+          
+          // write to virtual fs
+          src = path.join(cwd, 'inline-' + Math.random() + extname);
+          fs.writeFileSync(src, script || '');
+          
+          if( transpiler ) loader.mapping(src, transpiler.name);
+        }
+        
+        src = path.normalize(src);
+        
+        if( name ) {
+          libs.define(name, {src: src});
+          if( exec ) WebModules.require(name);
+        } else {
+          WebModules.require(src);
+        }
+      }
+      
       // scan
       WebModules.scan = function() {
         var doc = document.currentScript && document.currentScript.ownerDocument || document;
         
-        // modules
-        [].forEach.call(doc.querySelectorAll('script[type$="/commonjs"]'), function(el) {
-          resolve(el);
+        [].forEach.call(doc.querySelectorAll('script'), function(el) {
+          handleScriptTag(el);
         });
       }
       
