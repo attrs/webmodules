@@ -7,7 +7,7 @@ var Transpiler = {
   types: function() { 
     return Object.keys(transpilers);
   },
-  add: function(type, loader, regexp) {
+  define: function(type, loader, regexp) {
     transpilers[type] = loader;
     
     if( regexp ) {
@@ -50,7 +50,7 @@ var Transpiler = {
 
 // bind default transpilers
 (function() {
-  Transpiler.add('es2016', function(src) {
+  Transpiler.define('es2016', function(src) {
     var transform = babel.transform(runtime.fs.readFileSync(src), { presets: ['es2015', 'stage-0'], sourceMaps: true });
     return {
       sourcemap: transform,
@@ -58,7 +58,7 @@ var Transpiler = {
     };
   }, /\.es6$/);
   
-  Transpiler.add('es2015', function(src) {
+  Transpiler.define('es2015', function(src) {
     var transform = babel.transform(runtime.fs.readFileSync(src), { presets: ['es2015'], sourceMaps: true });
     return {
       sourcemap: transform,
@@ -66,7 +66,7 @@ var Transpiler = {
     };
   });
   
-  Transpiler.add('jsx', function(src) {
+  Transpiler.define('react', function(src) {
     var transform = babel.transform(runtime.fs.readFileSync(src), { presets: ['es2015', 'react'], sourceMaps: true });
     return {
       sourcemap: transform,
@@ -74,7 +74,11 @@ var Transpiler = {
     };
   }, /\.jsx$/);
   
-  Transpiler.add('css', function(src) {
+  Transpiler.define('es6', Transpiler.get('es2015'));
+  Transpiler.define('es7', Transpiler.get('es2016'));
+  Transpiler.define('jsx', Transpiler.get('react'));
+  
+  Transpiler.define('css', function(src) {
     var style = document.createElement('link');
     style.setAttribute('rel', 'stylesheet');
     style.setAttribute('type', 'text/css');
@@ -91,7 +95,7 @@ var Transpiler = {
     };
   }, /\.css$/);
   
-  Transpiler.add('html', function(src) {
+  Transpiler.define('html', function(src) {
     var doc, error;
     // check supports HTMLImports
     if( 'import' in document.createElement('link') ) {
@@ -121,7 +125,7 @@ var Transpiler = {
     };
   }, /\.html$/);
   
-  Transpiler.add('less', function(src) {
+  Transpiler.define('less', function(src) {
     var less = require('less/lib/less-browser/index.js')(window, {});
     var options = {
       filename: src.replace(/#.*$/, '')
@@ -143,7 +147,7 @@ var Transpiler = {
     };
   }, /\.less$/);
   
-  Transpiler.add('coffee', function(src) {
+  Transpiler.define('coffee', function(src) {
     //var coffee = require('coffee-script/lib/coffee-script/browser.js');
     var coffee = require('coffee-script');
     var compiled = coffee.compile(runtime.fs.readFileSync(src), {bare:true, header:true, sourceMap:true});
@@ -154,11 +158,11 @@ var Transpiler = {
     };
   }, /\.coffee$/);
   
-  Transpiler.add('scss', function(src) {
+  Transpiler.define('scss', function(src) {
     // TODO: scss
   }, /\.scss$/);
   
-  Transpiler.add('ts', function(src) {
+  Transpiler.define('ts', function(src) {
     // TODO: typescript, compiler 용량이 너무 크다.3M.문제.
   }, /\.ts$/);
 })();
@@ -166,6 +170,7 @@ var Transpiler = {
 
 module.exports = {
   runtime: function(o) {
+    if( !arguments.length ) return runtime;
     runtime = o;
   },
   transpilers: Transpiler
