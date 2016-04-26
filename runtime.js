@@ -118,21 +118,41 @@
       }
     })();
     
-    function loader(src, type) {
-      var exists, ext = path.extname(src).toLowerCase();
-      if( webmodules ) {
-        if( type ) exists = webmodules.transpilers.get(type) ? true : false;
-        else exists = webmodules.transpilers.exists(src);
-        
-        if( !exists && !~['.js', '.json'].indexOf(ext) ) {
-          console.warn(LABEL + 'unsupported type \'' + path.extname(src) + '\'', src);
-        }
-      }
+    var loader = (function() {
+      var mapping = {};
       
-      if( exists ) return webmodules.transpilers.transpile(src, type);
-      else if( ext === '.json' ) return { exports: JSON.parse(fs.readFileSync(src)) };
-      else return { code: fs.readFileSync(src) };
-    }
+      var loader = function(src, type) {
+        var extension = path.extname(src).toLowerCase();
+        var mapped = mapping[src];
+        var transpiler;
+        
+        if( webmodules ) {
+          var byExtension = webmodules.transpilers.findByExtension(extension);
+          if( mapped ) {
+            transpiler = webmodules.transpilers.find(mapped);
+          } else if( byExtension ) {
+            transpiler = byExtension;
+          }
+        }
+        
+        if( transpiler ) {
+          return transpiler.transpile(src);
+        } else {
+          if( !~['.js', '.json'].indexOf(extension) )
+            console.warn(LABEL + 'unsupported type \'' + path.extname(src) + '\'', src);
+          
+          if( extension === '.json' ) return { exports: JSON.parse(fs.readFileSync(src)) };
+          else return { code: fs.readFileSync(src) };
+        }
+      };
+      
+      loader.mapping = function(src, transpiler) {
+        console.log('mapping', src, transpiler);
+        mapping[path.normalize(src)] = transpiler;
+      };
+      
+      return loader;
+    })();
     
     var cwd = path.normalize('.');
     var basePackage = (function() {
@@ -598,38 +618,6 @@
       window.require.resolve = WebModules.require.resolve;
       window.require.base = WebModules.require.base;
       
-      function resolve(el) {
-        if( el.__webmodules_managed__ ) return;
-        el.__webmodules_managed__ = true;
-        var bootstrap = el.hasAttribute('data-bootstrap');
-        var src = el.getAttribute('data-src');
-        var filename = el.getAttribute('data-filename');
-        var lang = el.getAttribute('data-lang');
-        var name = el.getAttribute('data-as');
-        var script = el.textContent || el.innerText;
-        var exec = el.hasAttribute('data-exec');
-        
-        var exports = el.getAttribute('data-exports');
-        var isPackage = el.hasAttribute('data-package') || el.hasAttribute('data-module'); // deprecated : data-module
-        
-        if( !src ) {
-          // write to virtual fs
-          src = path.join(cwd, filename || ('file-' + Math.random() + (lang ? ('.' + lang) : '.js')));
-          fs.writeFileSync(src, script || '');
-        }
-        
-        if( bootstrap ) {
-          var result = WebModules.require(src);
-          if( debug ) console.log(LABEL + 'bootstrap', src, result);
-          for( var k in result ) libs.define(k, result[k]);
-        } else if( name ) {
-          libs.define(name, {src: src});
-          if( exec ) WebModules.require(name);
-        } else {
-          WebModules.load(src);
-        }
-      }
-      
       // bootstraping
       (function() {
         // put env defined via meta tag
@@ -645,11 +633,27 @@
           libs.define('fs', {exports:fs});
           libs.define('path', {exports:path});
         
-          var bootstrapscripts = document.querySelectorAll('script[type$="/commonjs"][data-bootstrap]');
+          var bootstrapscripts = document.querySelectorAll('script[data-bootstrap]');
           if( bootstrapscripts.length ) {
             // load defined bootstrap instead default bootstrap package
             [].forEach.call(bootstrapscripts, function(el) {
-              resolve(el);
+              var type = el.type;
+              if( !type || type.toLowerCase() === 'text/javascript' ) return;
+              if( el.__webmodules_managed__ ) return;
+              el.__webmodules_managed__ = true;
+              
+              var src = el.getAttribute('data-src');
+              var script = el.textContent || el.innerText;
+              
+              if( !src ) {
+                // write to virtual fs
+                src = path.join(cwd, 'inline-' + Math.random() + '.js');
+                fs.writeFileSync(src, script || '');
+              }
+              
+              var result = WebModules.require(src);
+              if( debug ) console.log(LABEL + 'bootstrap', src, result);
+              for( var k in result ) libs.define(k, result[k]);
             });
           } else {
             // load default bootstrap package (webmodules/node_modules/node-libs-browser)
@@ -674,13 +678,45 @@
         webmodules.runtime(WebModules);
       })();
       
+      function handleScriptTag(el) {
+        var type = el.type;
+        if( !type || type.toLowerCase() === 'text/javascript' ) return;
+        if( el.__webmodules_managed__ ) return;
+        el.__webmodules_managed__ = true;
+        
+        var transpiler = webmodules.transpilers.findByMimeType(el.type.toLowerCase());
+        var src = el.getAttribute('data-src');
+        var name = el.getAttribute('data-as');
+        var script = el.textContent || el.innerText;
+        var exec = el.hasAttribute('data-exec');
+        
+        if( !src ) {
+          var extname = transpiler && transpiler.extensions ? transpiler.extensions[0] : '.js';
+          if( extname[0] !== '.' ) extname = '.' + extname;
+          
+          // write to virtual fs
+          src = path.join(cwd, 'inline-' + Math.random() + extname);
+          fs.writeFileSync(src, script || '');
+          
+          if( transpiler ) loader.mapping(src, transpiler.name);
+        }
+        
+        src = path.normalize(src);
+        
+        if( name ) {
+          libs.define(name, {src: src});
+          if( exec ) WebModules.require(name);
+        } else {
+          WebModules.require(src);
+        }
+      }
+      
       // scan
       WebModules.scan = function() {
         var doc = document.currentScript && document.currentScript.ownerDocument || document;
         
-        // modules
-        [].forEach.call(doc.querySelectorAll('script[type$="/commonjs"]'), function(el) {
-          resolve(el);
+        [].forEach.call(doc.querySelectorAll('script'), function(el) {
+          handleScriptTag(el);
         });
       }
       
