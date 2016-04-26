@@ -41,7 +41,7 @@ jquery(document).ready(function($) {
   );
   
   ReactDOM.render(
-    React.createElement(require('./files/script.es6.jsx').default, {
+    React.createElement(require('./files/script.es6.jsx').Avatar, {
       pagename: 'Engineering'
     }),
     document.getElementById('react-es6')
