@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>webmodules example</title>
+  <meta charset="utf-8">
+  <meta name="webmodules.debug" content="false">
+  <meta name="webmodules.package.name" content="example">
+  <meta name="webmodules.package.version" content="0.0.0">
+  <meta name="webmodules.env.NAME" content="value">
+  <meta name="webmodules.env.NODE_ENV" content="development">
+  
+  <script type="text/commonjs" data-src="js/custom.js" data-as="custom-lib"></script>
+  <script type="text/commonjs" data-as="custom-lib-inline">
+    module.exports = document;
+  </script>
+  
+  <script type="text/commonjs">
+    var path = require('path');
+    var jquery = require('jquery');
+    var d3 = require('d3');
+    var fa = require('font-awesome/css/font-awesome.min.css');
+    var React = require('react');
+    var ReactDOM = require('react-dom');
+    var custom_lib = require('custom-lib');
+    var custom_lib_inline = require('custom-lib-inline');
+    
+    console.info('inline commonjs', __dirname, __filename);
+    console.log('path', path);
+    console.log('jquery', jquery);
+    console.log('d3', d3);
+    console.log('font-awesome', fa);
+    console.log('react', React);
+    console.log('react-dom', ReactDOM);
+    console.log('custom-lib', custom_lib);
+    console.log('custom-lib-inline', custom_lib_inline);
+  </script>
+  
+  <script type="text/coffeescript">
+    path = require 'path'
+    jquery = require 'jquery'
+    d3 = require 'd3'
+    fa = require 'font-awesome/css/font-awesome.min.css'
+    React = require 'react'
+    ReactDOM = require 'react-dom'
+    custom_lib = require 'custom-lib'
+    custom_lib_inline = require 'custom-lib-inline'
+    
+    console.info 'inline coffeescript', __dirname, __filename
+    console.log 'path', path
+    console.log 'jquery', jquery
+    console.log 'd3', d3
+    console.log 'font-awesome', fa
+    console.log 'react', React
+    console.log 'react-dom', ReactDOM
+    console.log 'custom-lib', custom_lib
+    console.log 'custom-lib-inline', custom_lib_inline
+  </script>
+    
+  <script type="text/es2015">
+    import {path} from 'path';
+    import {jquery} from 'jquery';
+    import {d3} from 'd3';
+    import {fa} from 'font-awesome/css/font-awesome.min.css';
+    import {React} from 'react';
+    import {ReactDOM} from 'react-dom';
+    import {custom_lib} from 'custom-lib';
+    import {custom_lib_inline} from 'custom-lib-inline';
+    const getMessage = () => 'Hello World';
+    
+    console.info('inline es2015', __dirname, __filename);
+    console.log('path', path);
+    console.log('jquery', jquery);
+    console.log('d3', d3);
+    console.log('font-awesome', fa);
+    console.log('react', React);
+    console.log('react-dom', ReactDOM);
+    console.log('custom-lib', custom_lib);
+    console.log('custom-lib-inline', custom_lib_inline);
+    console.log('getMessage', getMessage());
+  </script>
+    
+  <script type="text/commonjs" data-src="js/app.js"></script>
+  <script src="/web_modules/webmodules/runtime.js"></script>
+</head>
+<body>
+  <div id="content"></div>
+  <div id="react"></div>
+  <div id="react-es6"></div>
+  <hello-world></hello-world>
+</body>
+</html>

@@ -1,5 +1,4 @@
 var React = require('react');
-var ReactDOM = require('react-dom');
 
 var Avatar = React.createClass({
   render: function() {
@@ -30,7 +29,4 @@ var PageLink = React.createClass({
   }
 });
 
-ReactDOM.render(
-  <Avatar pagename="Engineering" />,
-  document.getElementById("react")
-);
+module.exports = Avatar;
