@@ -1,0 +1,13 @@
+{
+  "name": "webmodules-example",
+  "version": "0.0.0",
+  "private": true,
+  "browserDependencies": {
+    "jquery": "^2.2.3",
+    "angular": "^1.5.5",
+    "react": "^15.0.1",
+    "react-dom": "^15.0.1",
+    "d3": "^3.5.16",
+    "font-awesome": "^4.6.1"
+  }
+}
