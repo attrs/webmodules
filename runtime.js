@@ -123,20 +123,13 @@
       
       var loader = function(src, type) {
         var extension = path.extname(src).toLowerCase();
-        var mapped = mapping[src];
-        var transpiler;
+        type = type || mapping[src];
+        var loader = type ? webmodules.loaders.find(type) : null;
         
-        if( webmodules ) {
-          var byExtension = webmodules.transpilers.findByExtension(extension);
-          if( mapped ) {
-            transpiler = webmodules.transpilers.find(mapped);
-          } else if( byExtension ) {
-            transpiler = byExtension;
-          }
-        }
+        if( debug ) console.info('load', src, type);
         
-        if( transpiler ) {
-          return transpiler.transpile(src);
+        if( loader ) {
+          return loader.load(src);
         } else {
           if( !~['.js', '.json'].indexOf(extension) )
             console.warn(LABEL + 'unsupported type \'' + path.extname(src) + '\'', src);
@@ -146,9 +139,8 @@
         }
       };
       
-      loader.mapping = function(src, transpiler) {
-        console.log('mapping', src, transpiler);
-        mapping[path.normalize(src)] = transpiler;
+      loader.mapping = function(src, loader) {
+        mapping[path.normalize(src)] = loader;
       };
       
       return loader;
@@ -166,6 +158,8 @@
         version: version,
         dir: dir,
         pkgdir: pkgdir,
+        aliases: {},
+        loader: {},
         manifest: {
           name: name,
           version: version,
@@ -386,6 +380,8 @@
         }
       }
       
+      var loadermapping = manifest.webmodules && manifest.webmodules.loader;
+      
       if( debug ) console.log(LABEL + 'package loaded', manifest.name, dir, main);
       
       // main 확정
@@ -397,6 +393,7 @@
         dir: dir,
         main: main,
         manifest: manifest,
+        loader: loadermapping,
         aliases: aliases
       };
       
@@ -460,7 +457,7 @@
       // src 가 다른 모듈로 swap 설정되어 있다면 실제 load 할 url 을 바꾼다. 즉, src 가 실제 파일의 url 이 아닐 수도 있다는 거.
       var url = src;
       if( pkg.aliases ) {
-        var alias = pkg.aliases[src];
+        var alias = pkg.aliases[url];
         if( alias === false ) throw new Error(LABEL + 'sub module \'' + src + '\' is ignored: ' + pkg.name);
         else if( alias && typeof alias === 'string' ) url = alias;
         if( debug ) console.info(LABEL + 'alias find', src, alias, pkg.manifest.browser);
@@ -468,7 +465,7 @@
       
       // create module object
       var module = {
-        id: src,
+        id: url,
         filename: url,
         exports: {},
         parent: caller,
@@ -478,7 +475,17 @@
       };
       module.require = createRequire(module);
       
-      var loaded = loader(url);
+      var type;
+      if( webmodules && pkg.loader ) {
+        (function() {
+          for( var pattern in pkg.loader ) {
+            var v = pkg.loader[pattern];
+            if( webmodules.match(url, pattern) ) type = v;
+          }
+        })();
+      }
+      
+      var loaded = loader(url, type);
       if( loaded.exports ) {
         module.exports = loaded.exports;
       } else if( typeof loaded.code === 'string' ) {
@@ -627,6 +634,22 @@
           process.env[name.substring(15)] = content;
         });
         
+        // process aliases
+        [].forEach.call(document.querySelectorAll('meta[name="webmodules.alias"]'), function(el) {
+          var src = el.getAttribute('src');
+          var as = el.getAttribute('as');
+          
+          if( src && as ) basePackage.aliases[as] = src;
+        });
+        
+        // loader matches
+        [].forEach.call(document.querySelectorAll('meta[name="webmodules.loader"]'), function(el) {
+          var match = el.getAttribute('match');
+          var loader = el.getAttribute('loader');
+          
+          if( match && loader ) basePackage.loader[match] = loader;
+        });
+        
         // bootstrap
         (function() {
           // bind bundled fs, path (bootstrap 에 의해 대체되지 않으면 기본 path, fs 사용)
@@ -684,21 +707,21 @@
         if( el.__webmodules_managed__ ) return;
         el.__webmodules_managed__ = true;
         
-        var transpiler = webmodules.transpilers.findByMimeType(el.type.toLowerCase());
+        var typeloader = webmodules.loaders.findByMimeType(el.type.toLowerCase());
         var src = el.getAttribute('data-src');
         var name = el.getAttribute('data-as');
         var script = el.textContent || el.innerText;
         var exec = el.hasAttribute('data-exec');
         
         if( !src ) {
-          var extname = transpiler && transpiler.extensions ? transpiler.extensions[0] : '.js';
+          var extname = typeloader && typeloader.extensions ? typeloader.extensions[0] : '.js';
           if( extname[0] !== '.' ) extname = '.' + extname;
           
           // write to virtual fs
           src = path.join(cwd, 'inline-' + Math.random() + extname);
           fs.writeFileSync(src, script || '');
           
-          if( transpiler ) loader.mapping(src, transpiler.name);
+          if( typeloader ) loader.mapping(src, typeloader.name);
         }
         
         src = path.normalize(src);
