@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+
+<html ng-app="app">
+<head>
+  <title>webmodules example</title>
+  <meta charset="utf-8">
+  <meta name="webmodules.loader" match="*.js" loader="react">
+  <meta name="webmodules.alias" src="react-native-web" as="react-native">
+  
+  <script type="text/react">
+    import {AppRegistry} from 'react-native';
+    import AwesomeProject from './lib/app.js';
+    
+    window.addEventListener('DOMContentLoaded', () => {
+      AppRegistry.registerComponent('AwesomeProject', () => AwesomeProject);
+      AppRegistry.runApplication('AwesomeProject', { rootTag: document.getElementById('app') });
+    });
+  </script>
+  
+  <script src="/web_modules/webmodules/runtime.js"></script>
+</head>
+<body>
+  <div id="app">
+  </div>
+</body>
+</html>
