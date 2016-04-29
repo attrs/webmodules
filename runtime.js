@@ -124,8 +124,9 @@
       var loader = function(src, type) {
         var extension = path.extname(src).toLowerCase();
         type = type || mapping[src];
-        var loader = type ? webmodules.loaders.find(type) : null;
+        var loader;
         
+        if( webmodules ) loader = type ? webmodules.loaders.find(type) : webmodules.loaders.findByExtension(extension);
         if( debug ) console.info('load', src, type);
         
         if( loader ) {
