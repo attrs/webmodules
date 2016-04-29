@@ -9,18 +9,17 @@
   
   <script type="text/react">
     import {AppRegistry} from 'react-native';
-    import AwesomeProject from './lib/app.js';
+    import ReactNativeExample from './lib/app.js';
     
     window.addEventListener('DOMContentLoaded', () => {
-      AppRegistry.registerComponent('AwesomeProject', () => AwesomeProject);
-      AppRegistry.runApplication('AwesomeProject', { rootTag: document.getElementById('app') });
+      AppRegistry.registerComponent('ReactNativeExample', () => ReactNativeExample);
+      AppRegistry.runApplication('ReactNativeExample', { rootTag: document.getElementById('react-root')});
     });
   </script>
   
   <script src="/web_modules/webmodules/runtime.js"></script>
 </head>
 <body>
-  <div id="app">
-  </div>
+  <div id="react-root"></div>
 </body>
 </html>

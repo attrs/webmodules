@@ -12,7 +12,7 @@ import React, {
   View
 } from 'react-native';
 
-class AwesomeProject extends Component {
+class ReactNativeExample extends Component {
   render() {
     return (
       <View style={styles.container}>
@@ -50,4 +50,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AwesomeProject;
+export default ReactNativeExample;
