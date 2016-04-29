@@ -1,45 +1,45 @@
 var runtime;
 
-var transpilers = {}, mimemap = {}, extensionmap = {};
-var Transpiler = {
+var loaders = {}, mimemap = {}, extensionmap = {};
+var Loaders = {
   names: function() { 
-    return Object.keys(transpilers);
+    return Object.keys(loaders);
   },
   define: function(name, options) {
-    if( !name ) throw new Error('[webmodules] missing transpiler name');
-    if( !options ) throw new Error('[webmodules] missing transpiler options');
+    if( !name ) throw new Error('[webmodules] missing loader name');
+    if( !options ) throw new Error('[webmodules] missing loader options');
     if( !options ) throw new Error('[webmodules] missing options');
-    if( typeof options.transpile !== 'function' ) throw new Error('[webmodules] options.transpile is must be a function');
+    if( typeof options.load !== 'function' ) throw new Error('[webmodules] options.load is must be a function');
     
-    var transpiler = {
+    var loader = {
       name: name,
       options: options,
-      transpile: options.transpile
+      load: options.load
     };
     var extensions = [];
     var mimeTypes = [];
     (options.extensions || []).forEach(function(extension) {
       if( extension[0] !== '.' ) extension = '.' + extension;
-      extensionmap[extension] = transpiler;
+      extensionmap[extension] = loader;
       extensions.push(extension);
     });
     
     (options.mimeTypes || []).forEach(function(mime) {
-      mimemap[mime] = transpiler;
+      mimemap[mime] = loader;
       mimeTypes.push(mime);
     });
     
-    transpiler.mimeTypes = mimeTypes;
-    transpiler.extensions = extensions;
-    transpilers[name] = transpiler;
+    loader.mimeTypes = mimeTypes;
+    loader.extensions = extensions;
+    loaders[name] = loader;
     
     return this;
   },
   get: function(type) {
-    return transpilers[type];
+    return loaders[type];
   },
   find: function(name) {
-    return transpilers[name] && transpilers[name];
+    return loaders[name] && loaders[name];
   },
   findByExtension: function(extension) {
     return extensionmap[extension] && extensionmap[extension];
@@ -55,12 +55,12 @@ var Transpiler = {
   }
 };
 
-// define default transpilers
+// define default loaders
 (function() {
-  Transpiler.define('es2016', {
+  Loaders.define('es2016', {
     extensions: ['.es7'],
     mimeTypes: ['text/es7', 'text/es2016'],
-    transpile: function(src) {
+    load: function(src) {
       var transform = require('babel-standalone').transform(runtime.fs.readFileSync(src), {
         presets: ['es2015', 'stage-0'],
         sourceMaps: true
@@ -73,10 +73,10 @@ var Transpiler = {
     }
   });
 
-  Transpiler.define('es2015', {
+  Loaders.define('es2015', {
     extensions: ['.es6'],
     mimeTypes: ['text/es6', 'text/es2015'],
-    transpile: function(src) {
+    load: function(src) {
       var transform = require('babel-standalone').transform(runtime.fs.readFileSync(src), {
         presets: ['es2015'],
         sourceMaps: true
@@ -89,12 +89,12 @@ var Transpiler = {
     }
   });
 
-  Transpiler.define('react', {
+  Loaders.define('react', {
     extensions: ['.jsx'],
     mimeTypes: ['text/react', 'text/jsx'],
-    transpile: function(src) {
+    load: function(src) {
       var transform = require('babel-standalone').transform(runtime.fs.readFileSync(src), {
-        presets: ['es2015', 'react'],
+        presets: ['es2015', 'stage-0', 'react'],
         sourceMaps: true
       });
       
@@ -105,10 +105,10 @@ var Transpiler = {
     }
   });
   
-  Transpiler.define('css', {
+  Loaders.define('css', {
     extensions: ['.css'],
     mimeTypes: ['text/css', 'text/stylesheet'],
-    transpile: function(src) {
+    load: function(src) {
       var style = document.createElement('style');
       style.setAttribute('type', 'text/css');
       style.setAttribute('data-src', src);
@@ -118,7 +118,7 @@ var Transpiler = {
       else style.innerHTML = css;
       
       if( document.head ) document.head.appendChild(style);
-      else console.error('[webmodules] css transpiler, where does document.head go away?');
+      else console.error('[webmodules] css loader, where does document.head go away?');
       
       return {
         exports: style
@@ -126,10 +126,10 @@ var Transpiler = {
     }
   });
   
-  Transpiler.define('html', {
+  Loaders.define('html', {
     extensions: ['.html'],
     mimeTypes: ['text/html'],
-    transpile: function(src) {
+    load: function(src) {
       var doc, error;
       // check supports HTMLImports
       if( 'import' in document.createElement('link') ) {
@@ -160,10 +160,10 @@ var Transpiler = {
     }
   });
   
-  Transpiler.define('less', {
+  Loaders.define('less', {
     extensions: ['.less'],
     mimeTypes: ['text/less'],
-    transpile: function(src) {
+    load: function(src) {
       var less = require('less/lib/less-browser/index.js')(window, {});
       var options = {
         filename: src.replace(/#.*$/, '')
@@ -178,7 +178,7 @@ var Transpiler = {
         else style.innerHTML = result.css;
       
         if( document.head ) document.head.appendChild(style);
-        else console.error('[webmodules] less transpiler, where does document.head go away?');
+        else console.error('[webmodules] less loader, where does document.head go away?');
       });
       
       return {
@@ -187,10 +187,10 @@ var Transpiler = {
     }
   });
   
-  Transpiler.define('coffee', {
+  Loaders.define('coffee', {
     extensions: ['.coffee'],
     mimeTypes: ['text/coffee', 'text/coffee-script', 'text/coffeescript'],
-    transpile: function(src) {
+    load: function(src) {
       var coffee = require('coffee-script');
       var compiled = coffee.compile(runtime.fs.readFileSync(src), {
         bare:true,
@@ -211,5 +211,9 @@ module.exports = {
     if( !arguments.length ) return runtime;
     runtime = o;
   },
-  transpilers: Transpiler
+  match: function(src, pattern) {
+    return require('minimatch')(src, pattern, { matchBase: true });
+  },
+  loaders: Loaders,
+  loaders: Loaders // @deprecated
 };
