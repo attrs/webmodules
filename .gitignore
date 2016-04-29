@@ -12,6 +12,8 @@ lib-cov
 pids
 logs
 results
+build
+dist
 
 npm-debug.log
 bower_components
@@ -25,3 +27,4 @@ bower_components
 !/node_modules/less/
 !/node_modules/coffee-script/
 !/node_modules/x-include/
+!/node_modules/minimatch/
