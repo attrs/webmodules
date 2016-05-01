@@ -1,10 +1,10 @@
-# webmodules-example-angular
+# webmodules examples - react-native-web
 
-## 설치 및 실행
+## Installation
 ```sh
 $ npm install -g webmodules
 $ git clone https://github.com/attrs/webmodules.git
-$ cd webmodules/examples/angular
+$ cd webmodules/examples/react-native-web
 $ wpm install
 $ wpm up 9000 -o
 ```
