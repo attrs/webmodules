@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>webmodules example</title>
+  <meta charset="utf-8">
+  
+  <script type="text/commonjs">
+    /*console.info('inline commonjs');
+    console.log('process', process);
+    console.log('__dirname', __dirname);
+    console.log('__filename', __filename);
+    console.log('require', require);
+    console.log('module', module);
+    console.log('require.resolve("./js/app.js")', require.resolve('./js/app.js'));
+    console.log('require("./js/app.js")', require('./js/app.js'));
+    */
+    
+    console.log('require("path")', require('path'));
+    console.log('require("assert")', require('assert'));
+    console.log('require("buffer")', require('buffer'));
+    console.log('require("console")', require('console'));
+    console.log('require("constants")', require('constants'));
+    console.log('require("crypto")', require('crypto'));
+    console.log('require("domain")', require('domain'));
+    console.log('require("events")', require('events'));
+    console.log('require("http")', require('http'));
+    console.log('require("https")', require('https'));
+    console.log('require("os")', require('os'));
+    console.log('require("path")', require('path'));
+    console.log('require("punycode")', require('punycode'));
+    console.log('require("process")', require('process'));
+    console.log('require("querystring")', require('querystring'));
+    console.log('require("stream")', require('stream'));
+    console.log('require("_stream_duplex")', require('_stream_duplex'));
+    console.log('require("_stream_passthrough")', require('_stream_passthrough'));
+    console.log('require("_stream_readable")', require('_stream_readable'));
+    console.log('require("_stream_transform")', require('_stream_transform'));
+    console.log('require("_stream_writable")', require('_stream_writable'));
+    console.log('require("string_decoder")', require('string_decoder'));
+    console.log('require("sys")', require('sys'));
+    console.log('require("timers")', require('timers'));
+    console.log('require("tty")', require('tty'));
+    console.log('require("url")', require('url'));
+    console.log('require("util")', require('util'));
+    console.log('require("vm")', require('vm'));
+    console.log('require("zlib")', require('zlib'));
+    
+    // Unsupported
+    //console.log('require("fs")', require('fs'));
+    //console.log('require("child_process")', require('child_process'));
+    //console.log('require("cluster")', require('cluster'));
+    //console.log('require("dgram")', require('dgram'));
+    //console.log('require("dns")', require('dns'));
+    //console.log('require("readline")', require('readline'));
+    //console.log('require("repl")', require('repl'));
+    //console.log('require("module")', require('module'));
+    //console.log('require("net")', require('net'));
+    //console.log('require("tls")', require('tls'));
+  </script>
+  <script type="text/commonjs" data-src="js/app.js"></script>
+  <script src="/web_modules/webmodules/runtime.js"></script>
+</head>
+<body>
+  <div id="content"></div>
+  <div id="react"></div>
+  <div id="react-es6"></div>
+  <hello-world></hello-world>
+</body>
+</html>
