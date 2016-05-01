@@ -78,7 +78,7 @@
       extname: function(src) {
         var filename = path.filename(src);
         var pos = filename.lastIndexOf('.');
-        if( !pos ) return '';
+        if( !~pos ) return '';
         if( ~pos ) return filename.substring(pos);
         return '';
       },
@@ -118,6 +118,7 @@
       }
     })();
     
+    
     var loader = (function() {
       var mapping = {};
       
@@ -133,7 +134,7 @@
           return loader.load(src);
         } else {
           if( !~['.js', '.json'].indexOf(extension) )
-            console.warn(LABEL + 'unsupported type \'' + path.extname(src) + '\'', src);
+            console.warn(LABEL + 'unsupported type \'' + extension + '\'', src);
           
           if( extension === '.json' ) return { exports: JSON.parse(fs.readFileSync(src)) };
           else return { code: fs.readFileSync(src) };
@@ -159,7 +160,6 @@
         version: version,
         dir: dir,
         pkgdir: pkgdir,
-        aliases: {},
         loader: {},
         manifest: {
           name: name,
@@ -312,12 +312,34 @@
       return module.exports || exports || {};
     }*/
     
-    var packageCache = {};
+    var packageCache = {}, cache = {};
     function loadPackage(src) {
       var dir = path.normalize(src);
       if( packageCache[dir] ) return packageCache[dir];
       
-      var manifest = loader(dir + '/package.json').exports;
+      var pkgjsonfile = dir + '/package.json';
+      var manifest = loader(pkgjsonfile).exports;
+      
+      var module = cache[pkgjsonfile] = {
+        id: pkgjsonfile,
+        filename: pkgjsonfile,
+        exports: manifest,
+        loaded: true,
+        children: [],
+        paths: []
+      };
+      
+      var pkg = packageCache[dir] = {
+        name: manifest.name,
+        version: manifest.version,
+        dir: dir,
+        manifest: manifest,
+        main: null,
+        loader: null,
+        aliases: null
+      };
+      
+      module.require = createRequire(module);
       
       // 각 package 들이 일정한 표준을 따르고 있지 않아서 여러가지 문제가 발생할 수 있다.
       // 여러가지 상황을 고려해 다음과 같은 원리로 로딩하기로 한다.
@@ -381,22 +403,14 @@
         }
       }
       
-      var loadermapping = manifest.webmodules && manifest.webmodules.loader;
-      
       if( debug ) console.log(LABEL + 'package loaded', manifest.name, dir, main);
       
       // main 확정
       main = path.normalize(path.join(dir, main || 'index.js'));
       
-      var pkg = packageCache[dir] = {
-        name: manifest.name,
-        version: manifest.version,
-        dir: dir,
-        main: main,
-        manifest: manifest,
-        loader: loadermapping,
-        aliases: aliases
-      };
+      pkg.main = main;
+      pkg.aliases = aliases;
+      pkg.loader = manifest.webmodules && manifest.webmodules.loader;
       
       return pkg;
     }
@@ -415,59 +429,22 @@
       return basePackage;
     }
     
-    function validateFilename(src) {
-      if( endsWith(src, '/') ) return src + 'index.js';
-      
-      var pkg = getPackage(src);
-      var relpath = src.substring(pkg.dir.length);
-      
-      // require('./file') 의 경우 file.js 가 있을 경우 file.js 를 의미하고 디렉토리일경우 ./file/index.js 를
-      // 의미한다(nodejs기준)
-      // 브라우저에서는 파일존재를 체크할 수 없으므로 wpm 으로 설치시 입력된 package.json/_files, _directories 배열을
-      // 참고해서 해석한다. 해당 필드가 존재하지 않는 경우, 확장자가 없을때는 file.js 를 기본으로 한다.
-      // nodejs 와 동일하게 file.js 와 file/index.js 가 동시에 있을 경우 파일(test.js)에 우선권을 준다.
-      // TODO: _files 필드가 없을땐 여러번의 요청을 날려서 파일 존재여부를 확인하는 편이 더 나을지도 모르겠다.
-      if( pkg.manifest._files ) {
-        if( ~pkg.manifest._files.indexOf(relpath) ) return src;
-        else if( ~pkg.manifest._files.indexOf(relpath + '.js') ) return src + '.js';
-        else if( ~pkg.manifest._directories.indexOf(relpath) ) return src + '/index.js';
-      }
-      
-      return path.extname(src) ? src : src + '.js';
-    }
-    
-    var cache = {};
     function load(src, caller) {
       if( !src ) throw new TypeError(LABEL + 'missing src');
       if( typeof src !== 'string' ) throw new TypeError(LABEL + 'src must be a string');
       
-      if( debug ) console.info(LABEL + 'load', src, libs[src] ? 'library' : 'file');
-      if( libs[src] ) {
-        return libs.load(src);
-      }
+      if( debug ) console.info(LABEL + 'load', src);
       
       src = path.normalize(src);
       if( cache[src] ) return cache[src];
       
-      // find src's module
+      // find package
       var pkg = getPackage(src);
-      if( debug ) console.log(LABEL + 'load', src, pkg.name);
-      if( pkg.dir === src ) src = pkg.main;
-      
-      // browserify: https://github.com/substack/browserify-handbook#browser-field
-      // src 가 다른 모듈로 swap 설정되어 있다면 실제 load 할 url 을 바꾼다. 즉, src 가 실제 파일의 url 이 아닐 수도 있다는 거.
-      var url = src;
-      if( pkg.aliases ) {
-        var alias = pkg.aliases[url];
-        if( alias === false ) throw new Error(LABEL + 'sub module \'' + src + '\' is ignored: ' + pkg.name);
-        else if( alias && typeof alias === 'string' ) url = alias;
-        if( debug ) console.info(LABEL + 'alias find', src, alias, pkg.manifest.browser);
-      }
       
       // create module object
-      var module = {
-        id: url,
-        filename: url,
+      var module = cache[src] = {
+        id: src,
+        filename: src,
         exports: {},
         parent: caller,
         loaded: false,
@@ -481,22 +458,24 @@
         (function() {
           for( var pattern in pkg.loader ) {
             var v = pkg.loader[pattern];
-            if( webmodules.match(url, pattern) ) type = v;
+            if( webmodules.match(src, pattern) ) type = v;
           }
         })();
       }
       
-      var loaded = loader(url, type);
+      if( debug ) console.info(LABEL + 'load', src, type, pkg.name);
+      
+      var loaded = loader(src, type);
       if( loaded.exports ) {
         module.exports = loaded.exports;
       } else if( typeof loaded.code === 'string' ) {
-        evaluate(loaded.code, url).call(module.exports, module.exports, module.require, module, url, path.dirname(url), window);
+        evaluate(loaded.code, module.filename).call(module.exports, module.exports, module.require, module, module.filename, path.dirname(module.filename), window);
       } else {
         throw new Error(LABEL + 'load error(null exports or code): ' + src);
       }
       
       module.loaded = true;
-      return cache[module.id] = module;
+      return module;
     }
     
     function createRequire(module) {
@@ -551,8 +530,48 @@
         }
       }
       
+      function resolveFilename(src) {
+        // https://nodejs.org/api/modules.html#modules_all_together
+        var pkg = getPackage(src);
+        var relpath = src.substring(pkg.dir.length);
+        
+        var files = pkg.manifest._files;
+        var dirs = pkg.manifest._directories;
+        
+        if( files ) {
+          if( ~files.indexOf(relpath) ) {
+            //console.log('src', src, 'file');
+            return src;
+          } else if( ~files.indexOf(relpath + '.js') ) {
+            //console.log('src', src, 'file(.js)');
+            return src + '.js';
+          } else if( ~files.indexOf(relpath + 'package.json') ) {
+            //console.log('src', src, 'directory(package.json)');
+            return loadPackage(src).main;
+          } else if( ~dirs.indexOf(relpath) ) {
+            //console.log('src', src, 'directory');
+            return src + '/index.js';
+          } else {
+            //throw new Error('Cannot find file \'' + src + '\'');
+          }
+        } else {
+          console.warn(LABEL + 'not found \'_files\', \'_directories\' fields in \'package.json\'', pkg.dir, pkg);
+        }
+        
+        return path.extname(src) ? src : src + '.js';
+      }
+      
       function resolve(src) {
         var filepath, srccase = 0;
+        
+        // resolve alias, browserify: https://github.com/substack/browserify-handbook#browser-field
+        if( pkg.aliases ) {
+          var alias = pkg.aliases[path.normalize(src)];
+          if( alias === false ) throw new Error(LABEL + 'sub module \'' + src + '\' is ignored: ' + pkg.name);
+          else if( alias && typeof alias === 'string' ) src = alias;
+          
+          if( debug ) console.info(LABEL + 'resolve(alias)', src, alias, pkg.aliases, pkg.manifest.browser);
+        }
         
         if( !src.indexOf('.') ) {
           filepath = path.normalize(path.join(dir, src));
@@ -573,21 +592,24 @@
           }
           
           if( libs[pkgname] ) { // when if pkg is defined library
-            if( subpath ) throw new Error('Cannot find module \'' + src + '\'');
+            if( subpath && subpath !== '/' ) throw new Error('Cannot find module \'' + src + '\'');
             return pkgname;
           } else {
-            var pkg = getSubPackage(pkgname);
-            if( subpath ) filepath = path.normalize(path.join(pkg.dir, subpath));
-            else filepath = pkg.main;
+            var subpkg = getSubPackage(pkgname);
+            if( subpath ) filepath = path.normalize(path.join(subpkg.dir, subpath));
+            else filepath = subpkg.main;
           }
         }
         
-        if( debug ) console.log(LABEL + 'resolve(' + srccase + ')', src, validateFilename(filepath));
-        return validateFilename(filepath);
+        filepath = resolveFilename(filepath);
+        
+        if( debug ) console.log(LABEL + 'resolve(' + srccase + ')', src, resolveFilename(filepath));
+        return filepath;
       }
       
       function require(src) {
-        return load(resolve(src), module).exports;
+        src = resolve(src);
+        return libs[src] ? libs.load(src).exports : load(src, module).exports;
       }
       
       require.__directory = dir;
@@ -640,7 +662,10 @@
           var src = el.getAttribute('src');
           var as = el.getAttribute('as');
           
-          if( src && as ) basePackage.aliases[as] = src;
+          if( src && as ) {
+            if( !basePackage.aliases ) basePackage.aliases = {};
+            basePackage.aliases[as] = src;
+          }
         });
         
         // loader matches
