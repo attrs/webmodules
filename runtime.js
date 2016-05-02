@@ -177,10 +177,6 @@
       console.info(LABEL + 'base pacakge', path.join(path.dirname(currentScript.src), '..', '..'), basePackage);
     }
     
-    function isFile(src) {
-      return endsWith(src.toLowerCase(), '.js') || endsWith(src.toLowerCase(), '.json');
-    }
-    
     var events = (function() {
       var listeners = {};
       
@@ -256,60 +252,6 @@
     function evaluate(script, src, exports) {
       return __evaluate(script, src, exports);
     }
-    
-    /*function exec(fn, filename, caller) {
-      if( typeof fn !== 'function' ) throw new TypeError(LABEL + 'exec: module must be a function');
-      if( !filename ) throw new TypeError(LABEL + 'exec: missing filename');
-      
-      if( debug ) console.log(LABEL + 'exec', filename);
-      
-      /* TODO: 
-      module.parent 에 대해서. (socketio-browser 모듈에서 발생한 문제)
-      nodejs 의 경우 호출한 Module 객체를 전달한다.
-      Module {
-        id: '.',
-        exports: {...},
-        parent: null,
-        filename: '/Volumes/git/attrs/webmodules/examples/runtime/lib/index.js',
-        loaded: false,
-        children: [Module ...]
-        paths: 
-         [ '/Volumes/git/attrs/webmodules/examples/runtime/lib/node_modules',
-           '/Volumes/git/attrs/webmodules/examples/runtime/node_modules',
-           '/Volumes/git/attrs/webmodules/examples/node_modules',
-           '/Volumes/git/attrs/webmodules/node_modules',
-           '/Volumes/git/attrs/node_modules',
-           '/Volumes/git/node_modules',
-           '/Volumes/node_modules',
-           '/node_modules' ]
-        }
-      /
-      
-      var module = {parent: caller, loaded: false};
-      var exports = module.exports = {};
-      var global = window;
-      var __filename = filename;
-      var __dirname = path.dirname(__filename);
-      var require = createRequire(__dirname);
-      
-      events.fire('before-exec', {
-        fn: fn,
-        exports: exports,
-        require: require,
-        filename: __filename,
-        dirname: __dirname
-      });
-      fn.call(exports, exports, require, module, __filename, __dirname, global);
-      module.loaded = true;
-      events.fire('exec', {
-        fn: fn,
-        exports: exports,
-        require: require,
-        filename: __filename,
-        dirname: __dirname
-      });
-      return module.exports || exports || {};
-    }*/
     
     var packageCache = {}, cache = {};
     function loadPackage(src) {
