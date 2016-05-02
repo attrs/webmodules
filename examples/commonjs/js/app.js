@@ -1,1 +1,5 @@
-console.log('Hello', require('./sub/'));
+var sub = require('./sub/');
+
+window.onload = function() {
+  document.querySelector('#content').innerHTML = 'Hello,' + sub;
+}
