@@ -118,7 +118,6 @@
       }
     })();
     
-    
     var loader = (function() {
       var mapping = {};
       
@@ -517,17 +516,8 @@
           subpkgdir = pkg.pkgdir ? path.join(pkg.pkgdir, name) : path.join(pkg.dir, NODE_MODULES, name);
         }
         
-        if( debug ) {
-          console.log(LABEL + 'sub package[' + name + '] dir:', subpkgdir);
-          return loadPackage(subpkgdir);
-        }
-        
-        try {
-          return loadPackage(subpkgdir);
-        } catch(err) {
-          if( debug ) console.error(err);
-          throw new Error('Cannot find module \'' + name + '\' : ' + err.message);
-        }
+        if( debug ) console.log(LABEL + 'sub package[' + name + '] dir:', subpkgdir);
+        return loadPackage(subpkgdir);
       }
       
       function resolveFilename(src) {
@@ -558,6 +548,8 @@
           console.warn(LABEL + 'not found \'_files\', \'_directories\' fields in \'package.json\'', pkg.dir, pkg);
         }
         
+        // if cannot confirm is exists
+        if( endsWith(src, '/') ) return src + '/index.js';
         return path.extname(src) ? src : src + '.js';
       }
       
