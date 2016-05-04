@@ -1,5 +1,4 @@
 var $ = require('jquery');
-window.jQuery = $;
 
 require('bootstrap');
 require('bootstrap/less/bootstrap.less');
