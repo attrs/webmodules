@@ -205,7 +205,22 @@ var Loaders = {
       };
     }
   });
+  
+  Loaders.define('jquery', {
+    mimeTypes: ['text/jquery'],
+    load: function(src) {
+      var script = runtime.fs.readFileSync(src);
+      script = 'var jQuery = require("jquery");' + script;
+      
+      return {
+        code: script
+      };
+    }
+  });
 })();
+
+
+var minimatch = require('minimatch');
 
 module.exports = {
   runtime: function(o) {
@@ -213,8 +228,9 @@ module.exports = {
     runtime = o;
   },
   match: function(src, pattern) {
-    return require('minimatch')(src, pattern, { matchBase: true });
+    var b = minimatch(src, pattern, { matchBase: true });
+    console.info('match', src, pattern, b);
+    return b;
   },
-  loaders: Loaders,
-  loaders: Loaders // @deprecated
+  loaders: Loaders
 };
