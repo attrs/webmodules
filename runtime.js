@@ -76,15 +76,16 @@
         else return src.substring(0, src.lastIndexOf('/')) || '/';
       },
       extname: function(src) {
-        var filename = path.filename(src);
+        var filename = path.basename(src);
         var pos = filename.lastIndexOf('.');
         if( !~pos ) return '';
         if( ~pos ) return filename.substring(pos);
         return '';
       },
-      filename: function(src) {
-        if( endsWith(src, '/') ) return '';
-        else return src.substring(src.lastIndexOf('/') + 1);
+      basename: function(src) {
+        while(~src.indexOf('//')) src = src.split('//').join('/');
+        if( endsWith(src, '/') ) src = src.substring(0, src.length -1);
+        return src.substring(src.lastIndexOf('/') + 1);
       }
     };
     
@@ -149,7 +150,7 @@
     
     var cwd = path.normalize('.');
     var basePackage = (function() {
-      var name = config('package.name') || path.filename(document.URL) || 'index.html';
+      var name = config('package.name') || path.basename(document.URL) || 'index.html';
       var version = config('package.version') || '0.0.0';
       var pkgdir = path.normalize(path.join(path.dirname(currentScript.src), '..'));
       var dir = path.normalize(path.join(pkgdir, '..'));
@@ -223,7 +224,6 @@
       }
     })();
     
-    
     var libs = {
       define: function(name, config) {
         if( !name ) throw new Error(LABEL + 'define library: missing name');
@@ -271,7 +271,7 @@
       };
       
       var pkg = packageCache[dir] = {
-        name: manifest.name,
+        name: path.basename(dir),
         version: manifest.version,
         dir: dir,
         manifest: manifest,
@@ -344,7 +344,7 @@
         }
       }
       
-      if( debug ) console.log(LABEL + 'package loaded', manifest.name, dir, main);
+      if( debug ) console.log(LABEL + 'package loaded', pkg.name, manifest.name, dir, main);
       
       // main 확정
       main = path.normalize(path.join(dir, main || 'index.js'));
@@ -395,10 +395,19 @@
       module.require = createRequire(module);
       
       var type;
-      if( webmodules && pkg.loader ) {
+      if( webmodules ) {
+        if( pkg.loader ) {
+          (function() {
+            for( var pattern in pkg.loader ) {
+              var v = pkg.loader[pattern];
+              if( webmodules.match(src, pattern) ) type = v;
+            }
+          })();
+        }
+        
         (function() {
-          for( var pattern in pkg.loader ) {
-            var v = pkg.loader[pattern];
+          for( var pattern in loadermap ) {
+            var v = loadermap[pattern];
             if( webmodules.match(src, pattern) ) type = v;
           }
         })();
@@ -553,6 +562,7 @@
       return require;
     }
     
+    var loadermap = {};
     // pack webmodule
     var WebModules = {
       require: createRequire(),
@@ -563,6 +573,12 @@
       cache: cache,
       packages: packageCache,
       libs: libs,
+      loadermap: {
+        mapping: function(src, loader) {
+          loadermap[src] = loader;
+          return this;
+        }
+      },
       fs: fs,
       on: events.on,
       once: events.once,
@@ -607,7 +623,7 @@
           var match = el.getAttribute('match');
           var loader = el.getAttribute('loader');
           
-          if( match && loader ) basePackage.loader[match] = loader;
+          if( match && loader ) WebModules.loadermap.mapping(match, loader);
         });
         
         // bootstrap
@@ -657,7 +673,7 @@
         })();
         
         // load self webmodules for use loader
-        webmodules = WebModules.require(path.filename(webmodulesdir));
+        webmodules = WebModules.require(path.basename(webmodulesdir));
         webmodules.runtime(WebModules);
       })();
       
