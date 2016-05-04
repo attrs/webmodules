@@ -166,6 +166,7 @@ var Loaders = {
     load: function(src) {
       var less = require('less/lib/less-browser/index.js')(window, {});
       var options = {
+        relativeUrls: true,
         filename: src.replace(/#.*$/, '')
       };
       
