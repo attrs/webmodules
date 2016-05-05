@@ -153,7 +153,7 @@
     })();
     
     var cwd = path.normalize('.');
-    var basePackage = (function() {
+    var mainpkg = (function() {
       var name = config('package.name') || path.basename(location.pathname) || 'webmodules-runtime';
       var version = config('package.version') || '0.0.0';
       var pkgdir = path.normalize(path.join(path.dirname(currentScript.src), '..'));
@@ -181,7 +181,7 @@
     if( debug ) {
       console.info(LABEL + 'module base', modulebase);
       console.info(LABEL + 'webmodules dir', webmodulesdir);
-      console.info(LABEL + 'base pacakge', path.join(path.dirname(currentScript.src), '..', '..'), basePackage);
+      console.info(LABEL + 'base pacakge', path.join(path.dirname(currentScript.src), '..', '..'), mainpkg);
     }
     
     var events = (function() {
@@ -383,7 +383,7 @@
       } else if( src.indexOf(webmodulesdir) === 0 ) { // when src is webmodules package
         return loadPackage(webmodulesdir);
       }
-      return basePackage;
+      return mainpkg;
     }
     
     
@@ -455,7 +455,7 @@
     
     function createRequire(module) {
       var filename = module && module.filename;
-      var dir = filename ? path.dirname(filename) : basePackage.dir;
+      var dir = filename ? path.dirname(filename) : mainpkg.dir;
       var pkg = getPackage(dir);
       
       if( debug ) console.log(LABEL + 'create require', dir, pkg.name);
@@ -637,17 +637,25 @@
           var as = el.getAttribute('as');
           
           if( src && as ) {
-            if( !basePackage.aliases ) basePackage.aliases = {};
-            basePackage.aliases[as] = src;
+            if( !mainpkg.aliases ) mainpkg.aliases = {};
+            mainpkg.aliases[as] = src;
           }
         });
         
-        // loader matches
-        [].forEach.call(document.querySelectorAll('meta[name="webmodules.loader"]'), function(el) {
+        // loader (global) matches
+        [].forEach.call(document.querySelectorAll('meta[name="webmodules.loader.global"]'), function(el) {
           var match = el.getAttribute('match');
           var loader = el.getAttribute('loader');
           
           if( match && loader ) WebModules.loadermap.mapping(match, loader);
+        });
+        
+        // loader(base pacakge) matches
+        [].forEach.call(document.querySelectorAll('meta[name="webmodules.loader"]'), function(el) {
+          var match = el.getAttribute('match');
+          var loader = el.getAttribute('loader');
+          
+          if( match && loader ) mainpkg.loader[match] = loader;
         });
         
         // bootstrap
