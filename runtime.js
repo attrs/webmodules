@@ -8,6 +8,10 @@
     }
   };
   
+  var Buffer = window.Buffer,
+    setImmediate = window.setImmediate,
+    clearImmediate = window.clearImmediate;
+  
   function __evaluate(script, src, exports) {
     var __evaluate = window.__evaluate;
     if( typeof exports === 'string' ) script += '\nmodule.exports = ' + exports + ';';
@@ -150,7 +154,7 @@
     
     var cwd = path.normalize('.');
     var basePackage = (function() {
-      var name = config('package.name') || path.basename(document.URL) || 'index.html';
+      var name = config('package.name') || path.basename(location.pathname) || 'webmodules-runtime';
       var version = config('package.version') || '0.0.0';
       var pkgdir = path.normalize(path.join(path.dirname(currentScript.src), '..'));
       var dir = path.normalize(path.join(pkgdir, '..'));
@@ -172,8 +176,10 @@
     
     var debug = config('debug') === 'true' ? true : false;
     var webmodulesdir = path.dirname(path.normalize(currentScript.src));
+    var modulebase = path.resolve(webmodulesdir, '..');
     
     if( debug ) {
+      console.info(LABEL + 'module base', modulebase);
       console.info(LABEL + 'webmodules dir', webmodulesdir);
       console.info(LABEL + 'base pacakge', path.join(path.dirname(currentScript.src), '..', '..'), basePackage);
     }
@@ -253,7 +259,12 @@
       return __evaluate(script, src, exports);
     }
     
-    var packageCache = {}, cache = {};
+    var packageCache = {}, cache = {}, dirmap = [];
+    function existsDirectory(dir) {
+      var dir = path.resolve(dir);
+      return ~dirmap.indexOf(dir) ? true : false;
+    }
+    
     function loadPackage(src) {
       var dir = path.normalize(src);
       if( packageCache[dir] ) return packageCache[dir];
@@ -269,6 +280,11 @@
         children: [],
         paths: []
       };
+      
+      manifest._directories && manifest._directories.forEach(function(subpath) {
+        subpath = path.resolve(dir, subpath);
+        if( !~dirmap.indexOf(subpath) ) dirmap.push(subpath);
+      });
       
       var pkg = packageCache[dir] = {
         name: path.basename(dir),
@@ -370,6 +386,7 @@
       return basePackage;
     }
     
+    
     function load(src, caller) {
       if( !src ) throw new TypeError(LABEL + 'missing src');
       if( typeof src !== 'string' ) throw new TypeError(LABEL + 'src must be a string');
@@ -393,6 +410,14 @@
         paths: []
       };
       module.require = createRequire(module);
+      
+      var dir = path.dirname(src);
+      while(dir) {
+        module.paths.push(path.resolve(dir, WEB_MODULES));
+        module.paths.push(path.resolve(dir, NODE_MODULES));
+        if( dir === '/' ) break;
+        dir = path.resolve(dir, '..');
+      }
       
       var type;
       if( webmodules ) {
@@ -433,42 +458,28 @@
       var dir = filename ? path.dirname(filename) : basePackage.dir;
       var pkg = getPackage(dir);
       
-      //console.info('create require', module, filename, dir, pkg.name);
-      
       if( debug ) console.log(LABEL + 'create require', dir, pkg.name);
-      function getSubPackage(name) {
-        var subpkgdir;
-        
-        // browserify: aliases is package.json/browser 필드가 object 인 경우이다.
-        // https://github.com/substack/browserify-handbook#browser-field
-        var aliases = pkg.aliases;
-        if( aliases ) {
-          var alias = aliases[name];
-          if( alias === false ) 
-            throw new Error(LABEL + 'sub package \'' + name + '\' is ignored (package.json/browser) : ' + pkg.dir);
-          else if( alias && typeof alias === 'string' ) name = alias;
+      
+      function getDependencyPackage(name) {
+        var confirmed;
+        if( module && module.paths ) {
+          (function() {
+            for(var i=0;i < module.paths.length; i++) {
+              if( confirmed ) break;
+              try {
+                var dir = path.resolve(module.paths[i], name);
+                if( existsDirectory(dir) ) confirmed = dir;
+                //console.info('found', dir, confirmed);
+              } catch(e) {}
+            }
+          })();
         }
         
-        var manifest = pkg.manifest || {};
-        var bpd = manifest.browserPeerDependencies;
-        var pd = manifest.peerDependencies;
-        var bdep = manifest.browserDependencies;
-        var dep = manifest.dependencies;
+        // 못찾았다면 modulebase 를 기준.
+        confirmed = confirmed || path.resolve(modulebase, name);
         
-        if( bpd && bpd[name] ) {
-          subpkgdir = path.join(basePackage.pkgdir, name);
-        } else if( pd && pd[name] ) {
-          subpkgdir = path.join(basePackage.pkgdir, name);
-        } else if( bdep && bdep[name] ) {
-          subpkgdir = pkg.pkgdir ? path.join(pkg.pkgdir, name) : path.join(pkg.dir, WEB_MODULES, name);
-        } else if( dep && dep[name] ) {
-          subpkgdir = pkg.pkgdir ? path.join(pkg.pkgdir, name) : path.join(pkg.dir, NODE_MODULES, name);
-        } else {
-          subpkgdir = pkg.pkgdir ? path.join(pkg.pkgdir, name) : path.join(pkg.dir, NODE_MODULES, name);
-        }
-        
-        if( debug ) console.log(LABEL + 'sub package[' + name + '] dir:', subpkgdir);
-        return loadPackage(subpkgdir);
+        if( debug ) console.log(LABEL + 'sub package[' + name + '] dir:', confirmed);
+        return loadPackage(confirmed);
       }
       
       function resolveFilename(src) {
@@ -534,11 +545,24 @@
             srccase = 4;
           }
           
+          // browserify: aliases is package.json/browser 필드가 object 인 경우이다.
+          // https://github.com/substack/browserify-handbook#browser-field
+          if( pkg.aliases ) {
+            var alias = pkg.aliases[pkgname];
+            if( alias === false ) 
+              throw new Error(LABEL + 'sub package \'' + name + '\' is ignored (package.json/browser) : ' + pkg.dir);
+            else if( alias && typeof alias === 'string' ) pkgname = alias;
+          }
+          
           if( libs[pkgname] ) { // when if pkg is defined library
-            if( subpath && subpath !== '/' ) throw new Error('Cannot find module \'' + src + '\'');
-            return pkgname;
+            if( subpath && subpath !== '/' ) {
+              var libdir = path.dirname(libs[pkgname].src);
+              filepath = path.resolve(libdir, subpath);
+            } else {
+              return pkgname;
+            }
           } else {
-            var subpkg = getSubPackage(pkgname);
+            var subpkg = getDependencyPackage(pkgname);
             if( subpath ) filepath = path.normalize(path.join(subpkg.dir, subpath));
             else filepath = subpkg.main;
           }
@@ -669,6 +693,14 @@
             var env = process.env;
             process = WebModules.require('process');
             for(var k in env) process.env[k] = env[k];
+          }
+          
+          if( libs['buffer'] ) Buffer = WebModules.require('buffer').Buffer;
+          
+          if( libs['timers'] ) {
+            var timers = WebModules.require('timers');
+            setImmediate = setImmediate || timers.setImmediate;
+            clearImmediate = clearImmediate || timers.clearImmediate;
           }
         })();
         
