@@ -126,8 +126,7 @@ var Loaders = {
       if (style.styleSheet) style.styleSheet.cssText = css;
       else style.innerHTML = css;
       
-      if( document.head ) document.head.appendChild(style);
-      else console.error('[webmodules] css loader, where does document.head go away?');
+      document.head.appendChild(style);
       
       return {
         exports: style
@@ -186,9 +185,8 @@ var Loaders = {
       less.render(runtime.fs.readFileSync(src), options).then(function(result) {
         if (style.styleSheet) style.styleSheet.cssText = result.css;
         else style.innerHTML = result.css;
-      
-        if( document.head ) document.head.appendChild(style);
-        else console.error('[webmodules] less loader, where does document.head go away?');
+        
+        document.head.appendChild(style);
       });
       
       return {
@@ -237,9 +235,7 @@ module.exports = {
     runtime = o;
   },
   match: function(src, pattern) {
-    var b = minimatch(src, pattern, { matchBase: true });
-    //console.info('match', src, pattern, b);
-    return b;
+    return minimatch(src, pattern, { matchBase: true });
   },
   loaders: Loaders
 };
