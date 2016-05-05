@@ -229,7 +229,7 @@ module.exports = {
   },
   match: function(src, pattern) {
     var b = minimatch(src, pattern, { matchBase: true });
-    console.info('match', src, pattern, b);
+    //console.info('match', src, pattern, b);
     return b;
   },
   loaders: Loaders
