@@ -109,11 +109,20 @@ var Loaders = {
     extensions: ['.css'],
     mimeTypes: ['text/css', 'text/stylesheet'],
     load: function(src) {
+      var path = require('path');;
+      var base = path.dirname(path.resolve(src));
+      var css = runtime.fs.readFileSync(src);
+      
+      css = css.replace(/url\s*\(\s*(['"]?)([^"'\)]*)\1\s*\)/gi, function(match) {
+        match = match.trim().substring(4, match.length - 1).split('"').join('').split('\'').join('');
+        var url = path.resolve(base, match);
+        return 'url(\"' + url + '\")';
+      });
+      
       var style = document.createElement('style');
       style.setAttribute('type', 'text/css');
       style.setAttribute('data-src', src);
-      // TODO: replace @import paths
-      var css = runtime.fs.readFileSync(src);
+      
       if (style.styleSheet) style.styleSheet.cssText = css;
       else style.innerHTML = css;
       
