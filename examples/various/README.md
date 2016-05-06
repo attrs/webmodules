@@ -1,10 +1,9 @@
-# webmodules-example
+# webmodules example - various
 
-## 설치 및 실행
 ```sh
 $ npm install -g webmodules
 $ git clone https://github.com/attrs/webmodules.git
-$ cd webmodules/examples/overall
+$ cd webmodules/examples/various
 $ wpm install
-$ wpm up -o
+$ wpm up 9000 -o
 ```

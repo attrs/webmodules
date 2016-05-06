@@ -1,6 +1,5 @@
-# webmodules examples - react-native-web
+# webmodules example - react-native-web
 
-## Installation
 ```sh
 $ npm install -g webmodules
 $ git clone https://github.com/attrs/webmodules.git

@@ -1,6 +1,5 @@
-# webmodules examples - es2015
+# webmodules example - es2015
 
-## Installation
 ```sh
 $ npm install -g webmodules
 $ git clone https://github.com/attrs/webmodules.git

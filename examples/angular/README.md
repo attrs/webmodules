@@ -1,6 +1,5 @@
-# webmodules examples - angular
+# webmodules example - angular
 
-## Installation
 ```sh
 $ npm install -g webmodules
 $ git clone https://github.com/attrs/webmodules.git
