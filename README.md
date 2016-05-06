@@ -101,14 +101,15 @@ $ wpm up . --open
 ```
 
 ## Examples
-- [CommonJS](./examples/commonjs)
-- [ES2015](./examples/es2015)
-- [Cofee Script](./examples/coffee-script)
-- [JQuery](./examples/jquery)
-- [Angularjs](./examples/angular)
-- [React](./examples/react)
-- [Run with Node.js](./examples/with-nodejs)
-- [Custom Transpiler](./examples/cutom-transpiler)
+- [commonjs](./examples/commonjs)
+- [es2015](./examples/es2015)
+- [coffee-script](./examples/coffee-script)
+- [bootstrap](./examples/bootstrap)
+- [jquery](./examples/jquery)
+- [angular](./examples/angular)
+- [react-dom](./examples/react-dom)
+- [react-native-web](./examples/react-native-web)
+- [various](./examples/various)
 
 
 ### License
