@@ -122,11 +122,36 @@ var Loaders = {
       var style = document.createElement('style');
       style.setAttribute('type', 'text/css');
       style.setAttribute('data-src', src);
+      document.head.appendChild(style);
       
       if (style.styleSheet) style.styleSheet.cssText = css;
       else style.innerHTML = css;
       
+      return {
+        exports: style
+      };
+    }
+  });
+  
+  Loaders.define('less', {
+    extensions: ['.less'],
+    mimeTypes: ['text/less'],
+    load: function(src) {
+      var less = require('less/lib/less-browser/index.js')(window, {});
+      var options = {
+        relativeUrls: true,
+        filename: src.replace(/#.*$/, '')
+      };
+      
+      var style = document.createElement('style');
+      style.setAttribute('type', 'text/css');
+      style.setAttribute('data-src', src);
       document.head.appendChild(style);
+      
+      less.render(runtime.fs.readFileSync(src), options).then(function(result) {
+        if (style.styleSheet) style.styleSheet.cssText = result.css;
+        else style.innerHTML = result.css;
+      });
       
       return {
         exports: style
@@ -165,33 +190,6 @@ var Loaders = {
           done(null, doc);
         }
       }
-    }
-  });
-  
-  Loaders.define('less', {
-    extensions: ['.less'],
-    mimeTypes: ['text/less'],
-    load: function(src) {
-      var less = require('less/lib/less-browser/index.js')(window, {});
-      var options = {
-        relativeUrls: true,
-        filename: src.replace(/#.*$/, '')
-      };
-      
-      var style = document.createElement('style');
-      style.setAttribute('type', 'text/css');
-      style.setAttribute('data-src', src);
-      
-      less.render(runtime.fs.readFileSync(src), options).then(function(result) {
-        if (style.styleSheet) style.styleSheet.cssText = result.css;
-        else style.innerHTML = result.css;
-        
-        document.head.appendChild(style);
-      });
-      
-      return {
-        exports: style
-      };
     }
   });
   
