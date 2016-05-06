@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>tinyget</title>
+  <meta charset="utf-8">
+  
+  <script type="text/commonjs">
+    var tinyget = require('tinyget');
+    
+    // #1
+    tinyget('data.json').qry({key: 'value'}).exec(function(err, result) {
+      if( err ) return console.info(err);
+      console.log('#1', result);
+    });
+    
+    // #2
+    tinyget({
+      url: 'data.text',
+      payload: {key:'value'}
+    }).exec(function(err, result) {
+      if( err ) return console.info(err);
+      console.log('#2', result);
+    });
+    
+    // #3
+    tinyget({
+      url: 'data.xml',
+      qry: {a:'b'},
+      payload: {key:'value'}
+    }, function(err, result) {
+      if( err ) return console.info(err);
+      console.log('#3', result);
+    });
+    
+    // #4
+    tinyget('data.json').type('text').exec(function(err, result) {
+      if( err ) return console.info(err);
+      console.log('#4', result);
+    });
+    
+    // #5
+    tinyget('data.json').type('json').exec(function(err, result) {
+      if( err ) return console.info(err);
+      console.log('#5', result);
+    });
+    
+    // #6
+    tinyget('data.xml').type('text').exec(function(err, result) {
+      if( err ) return console.info(err);
+      console.log('#6', result);
+    });
+    
+    // #7
+    tinyget('data.text').type('json').exec(function(err, result) {
+      if( err ) return console.info(err);
+      console.log('#7', result);
+    });
+    
+    // #8
+    tinyget('data.html').exec(function(err, result) {
+      if( err ) return console.info(err);
+      console.log('#8', result);
+    });
+    
+    // #9
+    tinyget('data.html').type('document').exec(function(err, result) {
+      if( err ) return console.info(err);
+      console.log('#9', result);
+    });
+    
+    // #10
+    tinyget('data.html').type('text').exec(function(err, result) {
+      if( err ) return console.info(err);
+      console.log('#10', result);
+    });
+  </script>
+  
+  <script src="/web_modules/webmodules/runtime.js"></script>
+</head>
+<body>
+</body>
+</html>

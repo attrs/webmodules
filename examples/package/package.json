@@ -1,0 +1,30 @@
+{
+  "name": "webmodules-example-package",
+  "version": "0.0.0",
+  "description": "webmodules-example-package",
+  "main": "lib/index.js",
+  "browser": "lib/browser.js",
+  "license": "MIT",
+  "dependencies": {
+    "jsdom": "^8.5.0",
+    "querystring": "^0.2.0",
+    "request": "^2.72.0",
+    "xmldom": "^0.1.22"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-rimraf": "^0.2.0",
+    "gulp-uglify": "^1.5.3",
+    "gulp-umd": "^0.2.0",
+    "gulp-util": "^3.0.7"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "dist",
+    "browser",
+    "LICENSE",
+    "README.md"
+  ]
+}
