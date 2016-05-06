@@ -4,5 +4,5 @@ require '../css/cover.css'
 
 
 (($) ->
-  console.log("DOM is ready")
+  console.log 'DOM is ready'
 ) require 'jquery'
