@@ -374,15 +374,22 @@
     
     function getPackage(src) {
       if( debug ) console.log(LABEL + 'get package', src);
+      
+      // TODO: 좀 더 정확하게 개선필요
       var paths = src.split('/');
       if( ~paths.indexOf(WEB_MODULES) || ~paths.indexOf(NODE_MODULES) ) {
         var pos = paths.lastIndexOf(WEB_MODULES);
         if( paths.lastIndexOf(NODE_MODULES) > pos ) pos = paths.lastIndexOf(NODE_MODULES);
-        var dir = paths.slice(0, pos + 2).join('/');
+        
+        var dir;
+        if( paths[pos + 1][0] === '@' ) dir = paths.slice(0, pos + 3).join('/');
+        else dir = paths.slice(0, pos + 2).join('/');
+        
         return loadPackage(dir);
       } else if( src.indexOf(webmodulesdir) === 0 ) { // when src is webmodules package
         return loadPackage(webmodulesdir);
       }
+      
       return mainpkg;
     }
     
@@ -529,20 +536,20 @@
         
         if( !src.indexOf('.') ) {
           filepath = path.normalize(path.join(dir, src));
-          srccase = 1;
         } else if( !src.indexOf('/') ) {
           filepath = path.normalize(src);
-          srccase = 2;
         } else {
           var pkgname, subpath;
           
-          if( ~src.indexOf('/') ) {
+          if( src[0] === '@' ) {
+            var spos = src.indexOf('/', src.indexOf('/') + 1);
+            pkgname = ~spos ? src.substring(0, spos) : src;
+            subpath = src.substring(pkgname.length);
+          } else if( ~src.indexOf('/') ) {
             pkgname = src.substring(0, src.indexOf('/'));
-            subpath = src.substring(src.indexOf('/'));
-            srccase = 3;
+            subpath = src.substring(pkgname.length);
           } else {
             pkgname = src;
-            srccase = 4;
           }
           
           // browserify: aliases is package.json/browser 필드가 object 인 경우이다.
@@ -553,6 +560,7 @@
               throw new Error(LABEL + 'sub package \'' + name + '\' is ignored (package.json/browser) : ' + pkg.dir);
             else if( alias && typeof alias === 'string' ) pkgname = alias;
           }
+          
           
           if( libs[pkgname] ) { // when if pkg is defined library
             if( subpath && subpath !== '/' ) {
@@ -570,7 +578,7 @@
         
         filepath = resolveFilename(filepath);
         
-        if( debug ) console.log(LABEL + 'resolve(' + srccase + ')', src, resolveFilename(filepath));
+        if( debug ) console.log(LABEL + 'resolve', src, filepath);
         return filepath;
       }
       
@@ -736,11 +744,10 @@
           // write to virtual fs
           src = path.join(cwd, 'inline-' + Math.random() + extname);
           fs.writeFileSync(src, script || '');
-          
-          if( typeloader ) loader.mapping(src, typeloader.name);
         }
         
         src = path.normalize(src);
+        if( typeloader ) loader.mapping(src, typeloader.name);
         
         if( name ) {
           libs.define(name, {src: src});
