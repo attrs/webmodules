@@ -272,6 +272,9 @@
       var pkgjsonfile = dir + '/package.json';
       var manifest = loader(pkgjsonfile).exports;
       
+      if( !manifest._files || !manifest._directories ) 
+        console.warn(LABEL + 'not found \'_files\', \'_directories\' fields in \'package.json\'', pkgjsonfile, manifest);
+      
       var module = cache[pkgjsonfile] = {
         id: pkgjsonfile,
         filename: pkgjsonfile,
@@ -497,25 +500,10 @@
         var files = pkg.manifest._files;
         var dirs = pkg.manifest._directories;
         
-        if( files ) {
-          if( ~files.indexOf(relpath) ) {
-            //console.log('src', src, 'file');
-            return src;
-          } else if( ~files.indexOf(relpath + '.js') ) {
-            //console.log('src', src, 'file(.js)');
-            return src + '.js';
-          } else if( ~files.indexOf(relpath + 'package.json') ) {
-            //console.log('src', src, 'directory(package.json)');
-            return loadPackage(src).main;
-          } else if( ~dirs.indexOf(relpath) ) {
-            //console.log('src', src, 'directory');
-            return src + '/index.js';
-          } else {
-            //throw new Error('Cannot find file \'' + src + '\'');
-          }
-        } else {
-          console.warn(LABEL + 'not found \'_files\', \'_directories\' fields in \'package.json\'', pkg.dir, pkg);
-        }
+        if( files && ~files.indexOf(relpath) ) return src;
+        else if( files && ~files.indexOf(relpath + '.js') ) return src + '.js';
+        else if( files && ~files.indexOf(relpath + 'package.json') ) return loadPackage(src).main;
+        else if( dirs && ~dirs.indexOf(relpath) ) return src + '/index.js';
         
         // if cannot confirm is exists
         if( endsWith(src, '/') ) return src + '/index.js';
