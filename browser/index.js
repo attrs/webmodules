@@ -61,7 +61,7 @@ var Loaders = {
     extensions: ['.es7'],
     mimeTypes: ['text/es7', 'text/es2016'],
     load: function(src) {
-      var transform = require('babel-standalone').transform(runtime.fs.readFileSync(src), {
+      var transform = require('babel-standalone').transform(runtime.fs.load(src), {
         presets: ['es2015', 'stage-0'],
         sourceMaps: true
       });
@@ -77,7 +77,7 @@ var Loaders = {
     extensions: ['.es6'],
     mimeTypes: ['text/es6', 'text/es2015'],
     load: function(src) {
-      var transform = require('babel-standalone').transform(runtime.fs.readFileSync(src), {
+      var transform = require('babel-standalone').transform(runtime.fs.load(src), {
         presets: ['es2015'],
         sourceMaps: true
       });
@@ -93,7 +93,7 @@ var Loaders = {
     extensions: ['.jsx'],
     mimeTypes: ['text/react', 'text/jsx'],
     load: function(src) {
-      var transform = require('babel-standalone').transform(runtime.fs.readFileSync(src), {
+      var transform = require('babel-standalone').transform(runtime.fs.load(src), {
         presets: ['es2015', 'stage-0', 'react'],
         sourceMaps: true
       });
@@ -111,7 +111,7 @@ var Loaders = {
     load: function(src) {
       var path = require('path');;
       var base = path.dirname(path.resolve(src));
-      var css = runtime.fs.readFileSync(src);
+      var css = runtime.fs.load(src);
       
       css = css.replace(/url\s*\(\s*(['"]?)([^"'\)]*)\1\s*\)/gi, function(match) {
         match = match.trim().substring(4, match.length - 1).split('"').join('').split('\'').join('');
@@ -148,7 +148,7 @@ var Loaders = {
       style.setAttribute('data-src', src);
       document.head.appendChild(style);
       
-      less.render(runtime.fs.readFileSync(src), options).then(function(result) {
+      less.render(runtime.fs.load(src), options).then(function(result) {
         if (style.styleSheet) style.styleSheet.cssText = result.css;
         else style.innerHTML = result.css;
       });
@@ -198,7 +198,7 @@ var Loaders = {
     mimeTypes: ['text/coffee', 'text/coffee-script', 'text/coffeescript'],
     load: function(src) {
       var coffee = require('coffee-script');
-      var compiled = coffee.compile(runtime.fs.readFileSync(src), {
+      var compiled = coffee.compile(runtime.fs.load(src), {
         bare:true,
         header:true,
         sourceMap:true
@@ -214,7 +214,7 @@ var Loaders = {
   Loaders.define('jquery', {
     mimeTypes: ['text/jquery'],
     load: function(src) {
-      var script = runtime.fs.readFileSync(src);
+      var script = runtime.fs.load(src);
       script = 'var jQuery = require("jquery");' + script;
       
       return {
