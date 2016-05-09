@@ -215,7 +215,16 @@ var Loaders = {
     mimeTypes: ['text/jquery'],
     load: function(src) {
       var script = runtime.fs.load(src);
-      script = 'var jQuery = require("jquery");' + script;
+      
+      script = 'var _jq = window.jQuery;\
+        try {\
+          var jQuery = window.jQuery = require("jquery");\
+          ' + script + '\
+        } catch(err) {\
+          throw err;\
+        } finally {\
+          window.jQuery = _jq;\
+        }';
       
       return {
         code: script
