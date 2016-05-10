@@ -257,7 +257,7 @@
         if( !lib ) throw new Error('Cannot find library \'' + name + '\'');
         if( lib && lib.exports ) return {exports: lib.exports};
         if( lib && lib.module ) return lib.module;
-        return lib.module = load(lib.src);
+        return lib.module = {exports: WebModules.require(lib.src)};
       }
     };
     
@@ -712,7 +712,7 @@
           // bind process to global if exists 'process' pacakage in bootstrap
           if( libs['process'] ) {
             var env = node_global.process.env;
-            node_global.process = WebModules.require('process');
+            node_global.process = WebModules.require('process') || node_global.process;
             for(var k in env) node_global.process.env[k] = env[k];
           }
           
