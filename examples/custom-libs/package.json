@@ -1,6 +1,5 @@
 {
   "name": "webmodules-example-custom-libs",
-  "description": "webmodules-example-runtime",
   "version": "0.0.0",
   "private": true,
   "browserDependencies": {

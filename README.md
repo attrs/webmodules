@@ -104,6 +104,7 @@ $ wpm up . --open
 - [commonjs](./examples/commonjs)
 - [es2015](./examples/es2015)
 - [coffee-script](./examples/coffee-script)
+- [custom library](./examples/custom-libs)
 - [bootstrap](./examples/bootstrap)
 - [angular](./examples/angular)
 - [react-dom](./examples/react-dom)
