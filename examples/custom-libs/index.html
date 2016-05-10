@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>webmodules example</title>
+  <meta charset="utf-8">
+  
+  <script type="text/commonjs" data-src="/web_modules/localstorage-fs/" data-as="fs"></script>
+  
+  <script type="text/commonjs">
+    var fs = require('fs');
+    var path = require('path');
+    
+    console.info('fs', fs);
+    console.info('cwd', process.cwd());
+    
+    var file = path.join(process.cwd(), 'test');
+    console.log('exists', fs.existsSync(file));
+    if( fs.existsSync(file) ) console.log('unlink', fs.unlinkSync(file));
+    console.log('exists', fs.existsSync(file));
+    console.log('write', fs.writeFileSync(file, 'contents'));
+    console.log('read', fs.readFileSync(file), fs.readFileSync(file).toString());
+    console.log('exists', fs.existsSync(file));
+  </script>
+  <script src="/web_modules/webmodules/runtime.js"></script>
+</head>
+<body>
+</body>
+</html>
