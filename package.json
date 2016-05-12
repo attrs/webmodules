@@ -47,6 +47,7 @@
     "lib",
     "browser",
     "runtime.js",
+    "runtime.min.js",
     "LICENSE",
     "README.md"
   ],
