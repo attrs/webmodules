@@ -65,7 +65,7 @@ function init() {
       
       var style = document.createElement('style');
       style.setAttribute('type', 'text/css');
-      style.setAttribute('data-src', src);
+      style.setAttribute('data-src', filepath);
       document.head.appendChild(style);
       
       if (style.styleSheet) style.styleSheet.cssText = css;
