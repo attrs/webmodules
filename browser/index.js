@@ -231,6 +231,46 @@ var Loaders = {
       };
     }
   });
+  
+  Loaders.define('json', {
+    extensions: ['.json'],
+    mimeTypes: ['text/json', 'application/json'],
+    load: function(src) {
+      return {
+        exports: JSON.parse(runtime.fs.load(src))
+      };
+    }
+  });
+  
+  Loaders.define('text', {
+    extensions: ['.txt', '.text'],
+    mimeTypes: ['text/plain'],
+    load: function(src) {
+      return {
+        exports: runtime.fs.load(src)
+      };
+    }
+  });
+  
+  Loaders.define('xml', {
+    extensions: ['.xml'],
+    mimeTypes: ['text/xml', 'application/xml'],
+    load: function(src) {
+      return {
+        exports: new DOMParser().parseFromString(runtime.fs.load(src), 'text/xml')
+      };
+    }
+  });
+  
+  Loaders.define('html', {
+    extensions: ['.html'],
+    mimeTypes: ['text/html'],
+    load: function(src) {
+      return {
+        exports: new DOMParser().parseFromString(runtime.fs.load(src), 'text/html')
+      };
+    }
+  });
 })();
 
 
