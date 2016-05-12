@@ -149,7 +149,10 @@
               if( minimatch(src, pattern, { matchBase: true }) )
                 loader = Loader.get(type[pattern]);
             }
-          } else if( minimatch ) {
+          } 
+          
+          // find using global pattern
+          if( !loader && minimatch ) {
             for( var pattern in patterns ) {
               if( minimatch(src, pattern, { matchBase: true }) )
                 loader = Loader.get(patterns[pattern]);
@@ -380,15 +383,6 @@
       if( !manifest._files || !manifest._directories ) 
         console.warn('not found \'_files\', \'_directories\' fields in \'package.json\'', pkgjsonfile, manifest);
       
-      var module = {
-        id: pkgjsonfile,
-        filename: pkgjsonfile,
-        exports: manifest,
-        loaded: true,
-        children: [],
-        paths: []
-      };
-      
       manifest._directories && manifest._directories.forEach(function(subpath) {
         subpath = path.resolve(dir, subpath);
         if( !~dirmap.indexOf(subpath) ) dirmap.push(subpath);
@@ -403,8 +397,6 @@
         loader: null,
         aliases: null
       };
-      
-      module.require = createRequire(module);
       
       // 각 package 들이 일정한 표준을 따르고 있지 않아서 여러가지 문제가 발생할 수 있다.
       // 여러가지 상황을 고려해 다음과 같은 원리로 로딩하기로 한다.
@@ -494,8 +486,14 @@
         else dir = paths.slice(0, pos + 2).join('/');
         
         return loadPackage(dir);
-      } else if( src.indexOf(webmodulesdir) === 0 ) { // when src is webmodules package
+      } else if( !src.indexOf(webmodulesdir) ) { // when src is webmodules package
         return loadPackage(webmodulesdir);
+      } else if( !src.indexOf(modulebase) && paths.length >= 3 ) {
+        var dir;
+        if( paths[2] && paths[2][0] === '@' && paths.length >= 4 ) dir = paths.slice(0, 4).join('/');
+        else dir = paths.slice(0, 3).join('/');
+        
+        return loadPackage(dir);
       }
       
       return mainpkg;
