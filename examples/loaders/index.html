@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>webmodules example</title>
+  <meta charset="utf-8">
+  <meta name="webmodules.debug" content="false">
+  
+  <script type="text/commonjs" data-filename="inline.js">
+    module.exports = 'commonjs:' + __filename;
+  </script>
+  
+  <script type="text/coffeescript" data-filename="inline.coffee">
+    module.exports = 'coffeescript' + __filename
+  </script>
+  
+  <script type="text/es2015" data-filename="inline.es6">
+    export default `${__filename}`;
+  </script>
+  
+  <script type="text/jsx" data-filename="inline.jsx">
+    var React = require('react');
+    export default (
+      <div>
+        jsx {__dirname}
+      </div>
+    );
+  </script>
+  
+  <script type="text/css" data-filename="inline.css">
+    body {
+      background: #333;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+  </script>
+  
+  <script type="text/less" data-filename="inline.less">
+    body {
+      background: #333;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+  </script>
+  
+  <script type="text/html" data-filename="inline.html">
+    <div>html</div>
+  </script>
+  
+  <script type="text/plain" data-filename="inline.txt">
+    text
+  </script>
+  
+  <script type="text/json" data-filename="inline.json">
+    {
+      "key": "value"
+    }
+  </script>
+  
+  <script type="text/xml" data-filename="inline.xml">
+    <note>
+      <to>Tove</to>
+      <from>Jani</from>
+      <heading>Reminder</heading>
+      <body>Dont forget me this weekend!</body>
+    </note>
+  </script>
+  
+  <script type="text/commonjs" data-src="js/app.js"></script>
+  <script src="/web_modules/webmodules/runtime.js"></script>
+</head>
+<body>
+  <hello-world></hello-world>
+</body>
+</html>
