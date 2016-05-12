@@ -14,6 +14,10 @@
   function __evaluate(script, src, exports) {
     var process = node_global.process;
     var Buffer = node_global.Buffer;
+    var setTimeout = node_global.setTimeout || window.setTimeout;
+    var clearTimeout = node_global.clearTimeout ||window.clearTimeout;
+    var setInterval = node_global.setInterval || window.setInterval;
+    var clearInterval = node_global.clearInterval ||window.clearInterval;
     var setImmediate = node_global.setImmediate || window.setTimeout;
     var clearImmediate = node_global.clearImmediate ||window.clearTimeout;
     
@@ -34,7 +38,7 @@
     var LABEL = '[webmodules] '
       ,WEB_MODULES = 'web_modules'
       ,NODE_MODULES = 'node_modules'
-      ,webmodules
+      ,minimatch
       ,win = window
       ,doc = document
       ,log = function() {
@@ -129,33 +133,128 @@
       }
     })();
     
-    var loader = (function() {
-      var mapping = {};
+    var loaders = (function() {
+      var loaders = {}, mimemap = {}, extensionmap = {}, mapping = {}, patterns = {}, defaultLoader;
       
-      var loader = function(src, type) {
-        var extension = path.extname(src).toLowerCase();
-        type = type || mapping[src];
-        var loader;
-        
-        if( webmodules ) loader = type ? webmodules.loaders.find(type) : webmodules.loaders.findByExtension(extension);
-        if( debug ) log('load', src, type);
-        
-        if( loader ) {
-          return loader.load(src);
-        } else {
-          if( !~['.js', '.json'].indexOf(extension) )
-            console.warn('unsupported type \'' + extension + '\'', src);
+      var Loader = {
+        load: function(src, type) {
+          var code = fs.load(src), loader, type = type || mapping[src];
+          if( typeof code === 'function' ) return { exports:code };
           
-          if( extension === '.json' ) return { exports: JSON.parse(fs.load(src)) };
-          else return { code: fs.load(src) };
+          if( typeof type === 'string' ) {
+            loader = Loader.get(type);
+            if( !loader ) throw new Error('Cannot find loader for \'' + type + '\'');
+          } else if( typeof type === 'object' && minimatch ) {
+            for( var pattern in type ) {
+              if( minimatch(src, pattern, { matchBase: true }) )
+                loader = Loader.get(type[pattern]);
+            }
+          } else if( minimatch ) {
+            for( var pattern in patterns ) {
+              if( minimatch(src, pattern, { matchBase: true }) )
+                loader = Loader.get(patterns[pattern]);
+            }
+          }
+          
+          if( !loader ) {
+            var extension = path.extname(src).toLowerCase();
+            loader = Loader.findByExtension(extension) || Loader.getDefault();
+          }
+          
+          if( debug ) log('loader', src, type, loader);
+          return loader.load(code, src);
+        },
+        pattern: function(pattern, type) {
+          patterns[pattern] = type;
+          return this;
+        },
+        mapping: function(src, type) {
+          mapping[path.resolve(src)] = type;
+          return this;
+        },
+        define: function(name, options) {
+          if( !name ) throw new Error('missing loader name');
+          if( !options ) throw new Error('missing loader options');
+          if( !options ) throw new Error('missing options');
+          if( typeof options.load !== 'function' ) throw new Error('options.load is must be a function');
+          
+          var loader = {
+            name: name,
+            options: options,
+            load: options.load
+          };
+          
+          var extensions = [];
+          var mimeTypes = [];
+          (options.extensions || []).forEach(function(extension) {
+            if( extension[0] !== '.' ) extension = '.' + extension;
+            extensionmap[extension] = loader;
+            extensions.push(extension);
+          });
+        
+          (options.mimeTypes || []).forEach(function(mime) {
+            mimemap[mime] = loader;
+            mimeTypes.push(mime);
+          });
+        
+          loader.mimeTypes = mimeTypes;
+          loader.extensions = extensions;
+          loaders[name] = loader;
+        
+          if( options.isDefault ) defaultLoader = loader;
+        
+          return this;
+        },
+        names: function() { 
+          return Object.keys(loaders);
+        },
+        get: function(name) {
+          return loaders[name];
+        },
+        getDefault: function() {
+          return defaultLoader;
+        },
+        setDefault: function(name) {
+          defaultLoader = loaders(name) || defaultLoader;
+          return this;
+        },
+        findByExtension: function(extension) {
+          return extensionmap[extension] && extensionmap[extension];
+        },
+        findByMimeType: function(mime) {
+          return mimemap[mime] && mimemap[mime];
+        },
+        mimeTypes: function() {
+          return Object.keys(mimemap);
+        },
+        extensions: function() {
+          return Object.keys(extensionmap);
         }
       };
       
-      loader.mapping = function(src, loader) {
-        mapping[path.resolve(src)] = loader;
-      };
+      // define default loaders (commonjs/json)
+      Loader.define('commonjs', {
+        extensions: ['.js'],
+        isDefault: true,
+        mimeTypes: ['text/commonjs'],
+        load: function(source) {
+          return {
+            code: source
+          };
+        }
+      });
       
-      return loader;
+      Loader.define('json', {
+        extensions: ['.json'],
+        mimeTypes: ['text/json', 'application/json'],
+        load: function(source) {
+          return {
+            exports: JSON.parse(source)
+          };
+        }
+      });
+      
+      return Loader;
     })();
     
     var cwd = path.resolve('.');
@@ -276,12 +375,12 @@
       if( packageCache[dir] ) return packageCache[dir];
       
       var pkgjsonfile = dir + '/package.json';
-      var manifest = loader(pkgjsonfile).exports;
+      var manifest = loaders.load(pkgjsonfile).exports;
       
       if( !manifest._files || !manifest._directories ) 
         console.warn('not found \'_files\', \'_directories\' fields in \'package.json\'', pkgjsonfile, manifest);
       
-      var module = cache[pkgjsonfile] = {
+      var module = {
         id: pkgjsonfile,
         filename: pkgjsonfile,
         exports: manifest,
@@ -428,7 +527,7 @@
       
       module.main = caller && caller.main || module;
       module.require = createRequire(module);
-    
+      
       var dir = path.dirname(src);
       while(dir) {
         module.paths.push(path.resolve(dir, WEB_MODULES));
@@ -436,29 +535,10 @@
         if( dir === '/' ) break;
         dir = path.resolve(dir, '..');
       }
-    
-      var type;
-      if( webmodules ) {
-        if( pkg.loader ) {
-          (function() {
-            for( var pattern in pkg.loader ) {
-              var v = pkg.loader[pattern];
-              if( webmodules.match(src, pattern) ) type = v;
-            }
-          })();
-        }
       
-        (function() {
-          for( var pattern in loadermap ) {
-            var v = loadermap[pattern];
-            if( webmodules.match(src, pattern) ) type = v;
-          }
-        })();
-      }
-    
-      if( debug ) log('load', src, type, pkg.name);
-    
-      var loaded = loader(src, type);
+      if( debug ) log('load', src, pkg.name, module);
+      
+      var loaded = loaders.load(src, pkg.loader);
       if( loaded.exports ) {
         module.exports = loaded.exports;
       } else if( typeof loaded.code === 'string' ) {
@@ -466,7 +546,7 @@
       } else {
         throw new Error('load error(null exports or code): ' + src);
       }
-    
+      
       module.loaded = true;
       if( module.parent && !~module.parent.children.indexOf(module) ) module.parent.children.push(module);
       
@@ -478,7 +558,7 @@
       var dir = filename ? path.dirname(filename) : mainpkg.dir;
       var pkg = getPackage(dir);
       
-      if( debug ) log('create require', dir, pkg.name);
+      if( debug ) log('create require', filename, dir, pkg);
       
       function getDependencyPackage(name) {
         var confirmed;
@@ -559,7 +639,6 @@
             else if( alias && typeof alias === 'string' ) pkgname = alias;
           }
           
-          
           if( libs[pkgname] ) { // when if pkg is defined library
             if( subpath && subpath !== '/' ) {
               var libdir = path.dirname(libs[pkgname].src);
@@ -587,28 +666,29 @@
       
       require.__directory = dir;
       require.__package = pkg;
+      require.__module = module;
       require.resolve = resolve;
       require.cache = cache;
+      require.__lookup = function(src) {
+        src = resolve(src);
+        return libs[src] ? libs.load(src) : load(src, module);
+      };
+      
       return require;
     }
     
-    var loadermap = {};
     // pack webmodule
     var WebModules = {
       require: createRequire(),
       createRequire: createRequire,
       load: load,
       loadPackage: loadPackage,
+      getPackage: getPackage,
       evaluate: evaluate,
       cache: cache,
       packages: packageCache,
       libs: libs,
-      loadermap: {
-        mapping: function(src, loader) {
-          loadermap[src] = loader;
-          return this;
-        }
-      },
+      loaders: loaders,
       fs: fs,
       on: events.on,
       once: events.once,
@@ -654,15 +734,15 @@
           }
         });
         
-        // loader (global) matches
+        // loader (global) pattern matches
         [].forEach.call(doc.querySelectorAll('meta[name="webmodules.loader.global"]'), function(el) {
           var match = el.getAttribute('match');
           var loader = el.getAttribute('loader');
           
-          if( match && loader ) WebModules.loadermap.mapping(match, loader);
+          if( match && loader ) loaders.pattern(match, loader);
         });
         
-        // loader(base pacakge) matches
+        // loader(base pacakge) pattern matches
         [].forEach.call(doc.querySelectorAll('meta[name="webmodules.loader"]'), function(el) {
           var match = el.getAttribute('match');
           var loader = el.getAttribute('loader');
@@ -729,9 +809,10 @@
           }*/
         })();
         
-        // load self webmodules for use loader
-        webmodules = WebModules.require(path.basename(webmodulesdir));
-        webmodules.runtime(WebModules);
+        // load self webmodules & load minimatch
+        var wmpkgname = path.basename(webmodulesdir);
+        WebModules.require(wmpkgname).runtime(WebModules);
+        minimatch = WebModules.require.__lookup(wmpkgname).require('minimatch');
       })();
       
       function handleScriptTag(el) {
@@ -740,7 +821,7 @@
         if( el.__webmodules_managed__ ) return;
         el.__webmodules_managed__ = true;
         
-        var typeloader = webmodules.loaders.findByMimeType(el.type.toLowerCase());
+        var typeloader = loaders.findByMimeType(el.type.toLowerCase());
         var src = el.getAttribute('data-src');
         var filename = el.getAttribute('data-filename');
         var name = el.getAttribute('data-as');
@@ -757,7 +838,7 @@
         }
         
         src = path.resolve(src);
-        if( typeloader ) loader.mapping(src, typeloader.name);
+        if( typeloader ) loaders.mapping(src, typeloader.name);
         
         if( name ) {
           libs.define(name, {src: src});

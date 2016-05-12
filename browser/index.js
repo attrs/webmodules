@@ -1,67 +1,12 @@
 var runtime;
 
-var loaders = {}, mimemap = {}, extensionmap = {};
-var Loaders = {
-  names: function() { 
-    return Object.keys(loaders);
-  },
-  define: function(name, options) {
-    if( !name ) throw new Error('[webmodules] missing loader name');
-    if( !options ) throw new Error('[webmodules] missing loader options');
-    if( !options ) throw new Error('[webmodules] missing options');
-    if( typeof options.load !== 'function' ) throw new Error('[webmodules] options.load is must be a function');
-    
-    var loader = {
-      name: name,
-      options: options,
-      load: options.load
-    };
-    var extensions = [];
-    var mimeTypes = [];
-    (options.extensions || []).forEach(function(extension) {
-      if( extension[0] !== '.' ) extension = '.' + extension;
-      extensionmap[extension] = loader;
-      extensions.push(extension);
-    });
-    
-    (options.mimeTypes || []).forEach(function(mime) {
-      mimemap[mime] = loader;
-      mimeTypes.push(mime);
-    });
-    
-    loader.mimeTypes = mimeTypes;
-    loader.extensions = extensions;
-    loaders[name] = loader;
-    
-    return this;
-  },
-  get: function(type) {
-    return loaders[type];
-  },
-  find: function(name) {
-    return loaders[name] && loaders[name];
-  },
-  findByExtension: function(extension) {
-    return extensionmap[extension] && extensionmap[extension];
-  },
-  findByMimeType: function(mime) {
-    return mimemap[mime] && mimemap[mime];
-  },
-  mimeTypes: function() {
-    return Object.keys(mimemap);
-  },
-  extensions: function() {
-    return Object.keys(extensionmap);
-  }
-};
-
-// define default loaders
-(function() {
-  Loaders.define('es2016', {
+// define bundle loaders
+function init() {
+  runtime.loaders.define('es2016', {
     extensions: ['.es7'],
     mimeTypes: ['text/es7', 'text/es2016'],
-    load: function(src) {
-      var transform = require('babel-standalone').transform(runtime.fs.load(src), {
+    load: function(source) {
+      var transform = require('babel-standalone').transform(source, {
         presets: ['es2015', 'stage-0'],
         sourceMaps: true
       });
@@ -73,11 +18,11 @@ var Loaders = {
     }
   });
 
-  Loaders.define('es2015', {
+  runtime.loaders.define('es2015', {
     extensions: ['.es6'],
     mimeTypes: ['text/es6', 'text/es2015'],
-    load: function(src) {
-      var transform = require('babel-standalone').transform(runtime.fs.load(src), {
+    load: function(source) {
+      var transform = require('babel-standalone').transform(source, {
         presets: ['es2015'],
         sourceMaps: true
       });
@@ -89,11 +34,11 @@ var Loaders = {
     }
   });
 
-  Loaders.define('react', {
+  runtime.loaders.define('react', {
     extensions: ['.jsx'],
     mimeTypes: ['text/react', 'text/jsx'],
-    load: function(src) {
-      var transform = require('babel-standalone').transform(runtime.fs.load(src), {
+    load: function(source) {
+      var transform = require('babel-standalone').transform(source, {
         presets: ['es2015', 'stage-0', 'react'],
         sourceMaps: true
       });
@@ -105,13 +50,12 @@ var Loaders = {
     }
   });
   
-  Loaders.define('css', {
+  runtime.loaders.define('css', {
     extensions: ['.css'],
     mimeTypes: ['text/css', 'text/stylesheet'],
-    load: function(src) {
-      var path = require('path');;
-      var base = path.dirname(path.resolve(src));
-      var css = runtime.fs.load(src);
+    load: function(css, filepath) {
+      var path = require('path');
+      var base = path.dirname(filepath);
       
       css = css.replace(/url\s*\(\s*(['"]?)([^"'\)]*)\1\s*\)/gi, function(match) {
         match = match.trim().substring(4, match.length - 1).split('"').join('').split('\'').join('');
@@ -133,22 +77,22 @@ var Loaders = {
     }
   });
   
-  Loaders.define('less', {
+  runtime.loaders.define('less', {
     extensions: ['.less'],
     mimeTypes: ['text/less'],
-    load: function(src) {
+    load: function(source, filepath) {
       var less = require('less/lib/less-browser/index.js')(window, {});
       var options = {
         relativeUrls: true,
-        filename: src.replace(/#.*$/, '')
+        filename: filepath.replace(/#.*$/, '')
       };
       
       var style = document.createElement('style');
       style.setAttribute('type', 'text/css');
-      style.setAttribute('data-src', src);
+      style.setAttribute('data-src', filepath);
       document.head.appendChild(style);
       
-      less.render(runtime.fs.load(src), options).then(function(result) {
+      less.render(source, options).then(function(result) {
         if (style.styleSheet) style.styleSheet.cssText = result.css;
         else style.innerHTML = result.css;
       });
@@ -159,46 +103,12 @@ var Loaders = {
     }
   });
   
-  Loaders.define('html', {
-    extensions: ['.html'],
-    mimeTypes: ['text/html'],
-    load: function(src) {
-      var doc, error;
-      // check supports HTMLImports
-      if( 'import' in document.createElement('link') ) {
-        var link = document.createElement('link');
-        link.rel = 'import';
-        link.href = src;
-        link.onload = function(e) {
-          doc = link.import;
-        };
-        link.onerror = function(e) {
-          console.error('html import error', e);
-          error = e;
-        };
-        document.head.appendChild(link);
-      } else {
-        require('x-include').import(src, function(err, doc) {
-          if( err ) return console.error('[webmodules] html imports error', err);
-        });
-      }
-      
-      return {
-        exports: function(done) {
-          if( typeof done !== 'function' ) done = function() {};
-          if( error ) return done(error);
-          done(null, doc);
-        }
-      }
-    }
-  });
-  
-  Loaders.define('coffee', {
+  runtime.loaders.define('coffee', {
     extensions: ['.coffee'],
     mimeTypes: ['text/coffee', 'text/coffee-script', 'text/coffeescript'],
-    load: function(src) {
+    load: function(source) {
       var coffee = require('coffee-script');
-      var compiled = coffee.compile(runtime.fs.load(src), {
+      var compiled = coffee.compile(source, {
         bare:true,
         header:true,
         sourceMap:true
@@ -211,15 +121,13 @@ var Loaders = {
     }
   });
   
-  Loaders.define('jquery', {
+  runtime.loaders.define('jquery', {
     mimeTypes: ['text/jquery'],
-    load: function(src) {
-      var script = runtime.fs.load(src);
-      
-      script = 'var _jq = window.jQuery;\
+    load: function(source) {
+      source = 'var _jq = window.jQuery;\
         try {\
           var jQuery = window.jQuery = require("jquery");\
-          ' + script + '\
+          ' + source + '\
         } catch(err) {\
           throw err;\
         } finally {\
@@ -227,62 +135,48 @@ var Loaders = {
         }';
       
       return {
-        code: script
+        code: source
       };
     }
   });
   
-  Loaders.define('json', {
-    extensions: ['.json'],
-    mimeTypes: ['text/json', 'application/json'],
-    load: function(src) {
-      return {
-        exports: JSON.parse(runtime.fs.load(src))
-      };
-    }
-  });
-  
-  Loaders.define('text', {
+  runtime.loaders.define('text', {
     extensions: ['.txt', '.text'],
     mimeTypes: ['text/plain'],
-    load: function(src) {
+    load: function(source) {
       return {
-        exports: runtime.fs.load(src)
+        exports: source
       };
     }
   });
   
-  Loaders.define('xml', {
+  runtime.loaders.define('xml', {
     extensions: ['.xml'],
     mimeTypes: ['text/xml', 'application/xml'],
-    load: function(src) {
+    load: function(source) {
       return {
-        exports: new DOMParser().parseFromString(runtime.fs.load(src), 'text/xml')
+        exports: new DOMParser().parseFromString(source, 'text/xml')
       };
     }
   });
   
-  Loaders.define('html', {
+  runtime.loaders.define('html', {
     extensions: ['.html'],
     mimeTypes: ['text/html'],
-    load: function(src) {
+    load: function(source) {
       return {
-        exports: new DOMParser().parseFromString(runtime.fs.load(src), 'text/html')
+        exports: new DOMParser().parseFromString(source, 'text/html')
       };
     }
   });
-})();
-
-
-var minimatch = require('minimatch');
+}
 
 module.exports = {
   runtime: function(o) {
     if( !arguments.length ) return runtime;
     runtime = o;
+    init();
+    return this;
   },
-  match: function(src, pattern) {
-    return minimatch(src, pattern, { matchBase: true });
-  },
-  loaders: Loaders
+  require: require
 };
