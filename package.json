@@ -8,6 +8,9 @@
   "author": "joje <joje.attrs@gmail.com>",
   "homepage": "https://github.com/attrs/webmodules",
   "license": "MIT",
+  "scripts": {
+    "prepublish": "gulp"
+  },
   "bin": {
     "wpm": "bin/wpm.js"
   },
@@ -29,8 +32,7 @@
     "npm": "^3.8.6",
     "open": "0.0.5",
     "semver": "^5.1.0",
-    "serve-static": "^1.10.2",
-    "x-include": "^0.0.3"
+    "serve-static": "^1.10.2"
   },
   "devDependencies": {
     "gulp": "^3.9.1",
