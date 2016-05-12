@@ -742,6 +742,7 @@
         
         var typeloader = webmodules.loaders.findByMimeType(el.type.toLowerCase());
         var src = el.getAttribute('data-src');
+        var filename = el.getAttribute('data-filename');
         var name = el.getAttribute('data-as');
         var script = el.textContent || el.innerText;
         var exec = el.hasAttribute('data-exec');
@@ -751,7 +752,7 @@
           if( extname[0] !== '.' ) extname = '.' + extname;
           
           // write to virtual fs
-          src = path.join(cwd, 'inline-' + Math.random() + extname);
+          src = path.join(cwd, filename || ('inline-' + Math.random() + extname));
           fs.write(src, script || '');
         }
         
