@@ -108,26 +108,38 @@
       
       return {
         write: function(src, contents) {
+          if( !src ) throw new Error('missing src');
           src = path.resolve(src);
           if( debug ) log('fs write', src);
           files[src] = contents;
           return this;
         },
+        remove: function(src) {
+          if( !src ) throw new Error('missing src');
+          src = path.resolve(src);
+          delete files[src];
+          return this;
+        },
+        get: function(src) {
+          if( !src ) throw new Error('missing src');
+          return files[path.resolve(src)];
+        },
         load: function(src) {
           if( !src ) throw new Error('missing src');
-          var text = files[path.resolve(src)], error;
-          if( typeof text !== 'string' ) {
-            var xhr = win.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
-            xhr.open('GET', src, false);
-            xhr.onreadystatechange = function(e) {
-              if( this.readyState == 4 && (this.status === 0 || (this.status >= 200 && this.status < 300) ) ) text = this.responseText;
-              else error = this.responseText;
-            };
-            xhr.send();
-            
-            if( error ) throw new Error('Cannot find module \'' + src + '\': ' + error);
-            text = text.split('//# sourceMappingURL=').join('//'); // TODO: validate sourcemap URL
-          }
+          src = path.resolve(src);
+          if( src in files ) return files[src];
+          
+          var text, error;
+          var xhr = win.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
+          xhr.open('GET', src, false);
+          xhr.onreadystatechange = function(e) {
+            if( this.readyState == 4 && (this.status === 0 || (this.status >= 200 && this.status < 300) ) ) text = this.responseText;
+            else error = this.responseText;
+          };
+          xhr.send();
+          
+          if( error ) throw new Error('Cannot find module \'' + src + '\': ' + error);
+          text = text.split('//# sourceMappingURL=').join('//'); // TODO: validate sourcemap URL
           return text;
         }
       }
