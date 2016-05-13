@@ -139,7 +139,7 @@
       var Loader = {
         load: function(src, type) {
           var code = fs.load(src), loader, type = type || mapping[src];
-          if( typeof code === 'function' ) return { exports:code };
+          if( typeof code === 'function' ) return { fn: code };
           
           if( typeof type === 'string' ) {
             loader = Loader.get(type);
@@ -292,7 +292,7 @@
       log('base pacakge', path.join(path.dirname(currentScript.src), '..', '..'), mainpkg);
     }
     
-    var events = (function() {
+    /*var events = (function() {
       var listeners = {};
       
       function fire(type, detail) {
@@ -336,7 +336,7 @@
         once: once,
         off: off
       }
-    })();
+    })();*/
     
     var libs = {
       define: function(name, config) {
@@ -536,14 +536,19 @@
       
       if( debug ) log('load', src, pkg.name, module);
       
-      var loaded = loaders.load(src, pkg.loader);
-      if( loaded.exports ) {
+      var loaded = loaders.load(src, pkg.loader), fn;
+      if( 'exports' in loaded ) {
         module.exports = loaded.exports;
-      } else if( typeof loaded.code === 'string' ) {
-        evaluate(loaded.code, module.filename).call(module.exports, module.exports, module.require, module, module.filename, path.dirname(module.filename), window);
+      } else if( 'fn' in loaded ) {
+        fn = loaded.fn;
+      } else if( 'code' in loaded ) {
+        fn = evaluate(loaded.code, module.filename);
       } else {
         throw new Error('load error(null exports or code): ' + src);
       }
+      
+      if( fn )
+        fn.call(module.exports, module.exports, module.require, module, module.filename, path.dirname(module.filename), window);
       
       module.loaded = true;
       if( module.parent && !~module.parent.children.indexOf(module) ) module.parent.children.push(module);
@@ -687,10 +692,7 @@
       packages: packageCache,
       libs: libs,
       loaders: loaders,
-      fs: fs,
-      on: events.on,
-      once: events.once,
-      off: events.off
+      fs: fs
     };
     
     // exports to global & scanning
