@@ -11,12 +11,14 @@
   <meta name="webmodules.env.NODE_ENV" content="development">
   
   <script type="text/commonjs" data-src="js/custom.js" data-as="custom-lib"></script>
+  <script type="text/json" data-require="jquery/package.json" data-as="test"></script>
   
   <script type="text/commonjs" data-as="custom-lib-inline">
     module.exports = document;
   </script>
   
   <script type="text/commonjs">
+    console.log('test', require('test'));
     var path = require('path');
     var jquery = require('jquery');
     var d3 = require('d3');

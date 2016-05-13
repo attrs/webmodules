@@ -767,12 +767,16 @@
               el.__webmodules_managed__ = true;
               
               var src = el.getAttribute('data-src');
+              var qry = el.getAttribute('data-require');
               var script = el.textContent || el.innerText;
               
+              if( qry ) src = WebModules.require.resolve(qry);
+              
               if( !src ) {
+                if( !script ) return;
                 // write to virtual fs
                 src = path.join(cwd, 'inline-' + Math.random() + '.js');
-                fs.write(src, script || '');
+                fs.write(src, script);
               }
               
               var result = WebModules.require(src);
@@ -823,18 +827,22 @@
         
         var typeloader = loaders.findByMimeType(el.type.toLowerCase());
         var src = el.getAttribute('data-src');
+        var qry = el.getAttribute('data-require');
         var filename = el.getAttribute('data-filename');
         var name = el.getAttribute('data-as');
         var script = el.textContent || el.innerText;
         var exec = el.hasAttribute('data-exec');
         
+        if( qry ) src = WebModules.require.resolve(qry);
+        
         if( !src ) {
+          if( !script ) return;
           var extname = typeloader && typeloader.extensions ? typeloader.extensions[0] : '.js';
           if( extname[0] !== '.' ) extname = '.' + extname;
           
           // write to virtual fs
           src = path.join(cwd, filename || ('inline-' + Math.random() + extname));
-          fs.write(src, script || '');
+          fs.write(src, script);
         }
         
         src = path.resolve(src);
