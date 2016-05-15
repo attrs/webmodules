@@ -831,12 +831,14 @@
       })();
       
       function handleScriptTag(el) {
-        var type = el.type;
+        var type = el.type.toLowerCase();
         if( !type || type.toLowerCase() === 'text/javascript' ) return;
         if( el.__webmodules_managed__ ) return;
         el.__webmodules_managed__ = true;
         
-        var typeloader = loaders.findByMimeType(el.type.toLowerCase());
+        var typeloader = loaders.findByMimeType(type);
+        if( !typeloader && type !== 'text/commonjs' ) return;
+        
         var src = el.getAttribute('data-src');
         var qry = el.getAttribute('data-require');
         var filename = el.getAttribute('data-filename');
