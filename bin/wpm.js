@@ -87,6 +87,7 @@ commander
 
 commander
   .command('up [port] [docbase]')
+  .alias('start')
   .description('Start Server')
   .option('-s, --self', 'self reference mode')
   .option('-o, --open [value]', 'open in browser')
@@ -129,6 +130,46 @@ commander
     console.log();
   });
 
+commander
+  .command('link <dir> [name]')
+  .description('Link Module')
+  .action(function(dir, name) {
+    lib.commands.link({
+      dir: dir,
+      name: name
+    }, function(err, result) {
+      if( err ) return error(err);
+      
+      console.log('%s \'%s\' to \'%s\'', chalk.cyan('link'), result.name, result.dir);
+    });
+  })
+  .on('--help', function() {
+    console.log('  Examples:');
+    console.log();
+    console.log('  $ wpm link /path/to/link pkgname');
+    console.log();
+  });
+
+commander
+  .command('unlink <name>')
+  .description('Unlink Module')
+  .action(function(name) {
+    lib.commands.unlink({
+      name: name
+    }, function(err, result) {
+      if( err ) return error(err);
+      if( !result ) return console.log('%s \'%s\'', chalk.cyan('not exists link: '), name);
+      
+      console.log('%s \'%s\'', chalk.cyan('unlink'), result.name);
+    });
+  })
+  .on('--help', function() {
+    console.log('  Examples:');
+    console.log();
+    console.log('  $ wpm unlink pkgname');
+    console.log();
+  });
+  
 commander
   .action(function (action) {
     console.log('Unknown Command \'%s\'', action || '');
