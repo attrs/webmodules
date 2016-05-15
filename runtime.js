@@ -251,7 +251,6 @@
       Loader.define('commonjs', {
         extensions: ['.js'],
         isDefault: true,
-        mimeTypes: ['text/commonjs'],
         load: function(source) {
           return {
             code: source
