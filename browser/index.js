@@ -165,25 +165,33 @@ function init() {
     extensions: ['.html'],
     mimeTypes: ['text/html'],
     load: function(source) {
+      return {
+        exports: new DOMParser().parseFromString(source, 'text/html')
+      };
+    }
+  });
+  
+  runtime.loaders.define('webcomponents', {
+    mimeTypes: ['text/webcomponents'],
+    load: function(source) {
       var encoded = btoa(source);
       
       // check supports HTMLImports
-      var result;
+      var link;
       if( 'import' in document.createElement('link') ) {
-        var link = document.createElement('link');
+        link = document.createElement('link');
         link.rel = 'import';
         link.href = 'data:text/html;base64,' + encoded;
         link.onerror = function(e) {
           console.error('html import error', e);
         };
         document.head.appendChild(link);
-        result = link;
       } else {
         console.warn('browser does not supports html imports');
       }
       
       return {
-        exports: result
+        exports: link
       };
     }
   });
