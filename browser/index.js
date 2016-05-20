@@ -177,21 +177,28 @@ function init() {
       var encoded = btoa(source);
       
       // check supports HTMLImports
-      var link;
+      var doc, err;
       if( 'import' in document.createElement('link') ) {
-        link = document.createElement('link');
+        var link = document.createElement('link');
         link.rel = 'import';
         link.href = 'data:text/html;base64,' + encoded;
+        link.onload = function(e) {
+          doc = link.import;
+        };
         link.onerror = function(e) {
           console.error('html import error', e);
+          err = e;
         };
         document.head.appendChild(link);
       } else {
-        console.warn('browser does not supports html imports');
+        err = new Error('browser does not supports HTMlImports');
+        console.warn(err.message);
       }
       
       return {
-        exports: link
+        exports: function(done) {
+          done(err, doc);
+        }
       };
     }
   });
