@@ -610,7 +610,7 @@
         else if( dirs && ~dirs.indexOf(relpath) ) return src + '/index.js';
         
         // if cannot confirm is exists
-        if( endsWith(src, '/') ) return src + '/index.js';
+        if( endsWith(src, '/') ) return src + 'index.js';
         return path.extname(src) ? src : src + '.js';
       }
       
