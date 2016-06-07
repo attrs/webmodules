@@ -1,0 +1,9 @@
+{
+  "name": "webmodules-example-forced-priority",
+  "version": "0.0.0",
+  "private": true,
+  "browserDependencies": {
+    "jquery": "^2.2.4",
+    "fullcalendar": "^2.7.3"
+  }
+}

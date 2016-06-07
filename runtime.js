@@ -567,6 +567,8 @@
       return module;
     }
     
+    var forced = [];
+    
     function createRequire(module) {
       var filename = module && module.filename;
       var dir = filename ? path.dirname(filename) : mainpkg.dir;
@@ -576,7 +578,8 @@
       
       function getDependencyPackage(name) {
         var confirmed;
-        if( module && module.paths ) {
+        
+        if( !~forced.indexOf(name) && module && module.paths ) {
           (function() {
             for(var i=0;i < module.paths.length; i++) {
               if( confirmed ) break;
@@ -702,6 +705,7 @@
       cache: cache,
       packages: packageCache,
       libs: libs,
+      forced: forced,
       loaders: loaders,
       fs: fs
     };
@@ -759,6 +763,16 @@
           var loader = el.getAttribute('loader');
           
           if( match && loader ) mainpkg.loader[match] = loader;
+        });
+        
+        // forced-priority packages
+        [].forEach.call(doc.querySelectorAll('meta[name="webmodules.forced"]'), function(el) {
+          var pkgs = (el.getAttribute('packages') || el.getAttribute('package')).split(',');
+          
+          pkgs.forEach(function(pkg) {
+            if( !pkg || !pkg.trim() ) return;
+            WebModules.forced.push(pkg);
+          });
         });
         
         // bootstrap
