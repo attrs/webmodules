@@ -771,7 +771,7 @@
           
           pkgs.forEach(function(pkg) {
             if( !pkg || !pkg.trim() ) return;
-            WebModules.forced.push(pkg);
+            WebModules.forced.push(pkg.trim());
           });
         });
         
