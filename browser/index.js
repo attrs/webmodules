@@ -84,7 +84,10 @@ function init() {
       var less = require('less/lib/less-browser/index.js')(window, {});
       var options = {
         relativeUrls: true,
-        filename: filepath.replace(/#.*$/, '')
+        filename: filepath.replace(/#.*$/, ''),
+        _sourceMap: {
+          sourceMapFileInline: true
+        }
       };
       
       var style = document.createElement('style');
@@ -172,7 +175,7 @@ function init() {
   });
   
   runtime.loaders.define('webcomponents', {
-    mimeTypes: ['text/webcomponents'],
+    mimeTypes: ['text/html-import', 'text/webcomponents'],
     load: function(source) {
       var encoded = btoa(source);
       
