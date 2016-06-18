@@ -809,10 +809,7 @@
               for( var k in result ) libs.define(k, result[k]);
             });
           } else {
-            // load default bootstrap package (webmodules/node_modules/node-libs-browser)
-            var src = path.resolve(path.join(path.dirname(currentScript.src), NODE_MODULES, 'node-libs-browser'));
-            var pkg = WebModules.loadPackage(src);
-            var result = WebModules.require(pkg.main);
+            var result = WebModules.require('webmodules').require('node-libs-browser');
             if( debug ) log('bootstrap', src, result);
             for( var k in result )
               if( result[k] ) libs.define(k, result[k]);
