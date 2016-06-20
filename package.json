@@ -1,6 +1,6 @@
 {
   "name": "webmodules",
-  "version": "0.1.20",
+  "version": "0.1.21",
   "description": "webmodules",
   "main": "lib/index.js",
   "browser": "browser/index.js",
