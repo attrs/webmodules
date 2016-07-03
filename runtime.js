@@ -394,6 +394,18 @@
       if( !manifest._files || !manifest._directories ) 
         console.warn('not found \'_files\', \'_directories\' fields in \'package.json\'', pkgjsonfile, manifest);
       
+      var dirs = [], files = [];
+      manifest._directories && manifest._directories.forEach(function(p) {
+        dirs.push(p.split('\\').join('/'));
+      });
+      
+      manifest._files && manifest._files.forEach(function(p) {
+        files.push(p.split('\\').join('/'));
+      });
+      
+      manifest._directories = dirs;
+      manifest._files = files;
+      
       manifest._directories && manifest._directories.forEach(function(subpath) {
         subpath = path.resolve(dir, subpath);
         if( !~dirmap.indexOf(subpath) ) dirmap.push(subpath);
