@@ -904,6 +904,26 @@
       WebModules.scan();
       win.addEventListener('DOMContentLoaded', function(e) {
         WebModules.scan();
+        
+        if( config('observe') !== 'false' ) {
+          if( window.MutationObserver ) {
+            var observer = new MutationObserver(function(mutations) {
+              mutations.forEach(function(mutation) {
+                [].forEach.call(mutation.addedNodes, function(node) {
+                  if( node.nodeType === 1 ) {
+                    if( node.tagName === 'script' ) handleScriptTag(node);
+                    if( node.querySelectorAll ) [].forEach.call(node.querySelectorAll('script'), handleScriptTag);
+                  }
+                });
+              });
+            });
+          
+            observer.observe(document.documentElement, {
+              childList: true,
+              subtree: true
+            });
+          }
+        }
       });
     })();
   })();
