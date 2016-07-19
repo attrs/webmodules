@@ -855,7 +855,20 @@
       
       function handleScriptTag(el) {
         var type = el.type.toLowerCase();
-        if( !type || type.toLowerCase() === 'text/javascript' ) return;
+        if( !type || type.toLowerCase() === 'text/javascript' ) {
+          var name = el.getAttribute('data-as');
+          var script = el.getAttribute('data-eval');
+          var filename = el.getAttribute('data-filename');
+          
+          if( name && script ) {
+            filename = filename || ('inline-' + Math.random() + '.js');
+            filename = path.join(cwd, filename);
+            fs.write(filename, 'module.exports = ' + script + ';');
+            libs.define(name, {src: path.resolve(filename)});
+          }
+          
+          return;
+        }
         if( el.__webmodules_managed__ ) return;
         el.__webmodules_managed__ = true;
         
@@ -866,9 +879,11 @@
         var qry = el.getAttribute('data-require');
         var filename = el.getAttribute('data-filename');
         var name = el.getAttribute('data-as');
+        var evalstring = el.getAttribute('data-eval');
         var script = el.textContent || el.innerText;
         var exec = el.hasAttribute('data-exec');
         
+        if( evalstring && !script ) script = 'module.exports = ' + evalstring + ';';
         if( qry ) src = WebModules.require.resolve(qry);
         
         if( !src ) {
