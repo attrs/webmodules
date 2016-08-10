@@ -145,7 +145,7 @@ function init() {
   });
   
   runtime.loaders.define('text', {
-    extensions: ['.txt', '.text'],
+    extensions: ['.txt', '.text', '.htm', '.html'],
     mimeTypes: ['text/plain'],
     load: function(source) {
       return {
@@ -165,7 +165,6 @@ function init() {
   });
   
   runtime.loaders.define('html', {
-    extensions: ['.html'],
     mimeTypes: ['text/html'],
     load: function(source) {
       return {
