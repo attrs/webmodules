@@ -857,14 +857,25 @@
         var type = el.type.toLowerCase();
         if( !type || type.toLowerCase() === 'text/javascript' ) {
           var name = el.getAttribute('data-as');
-          var script = el.getAttribute('data-eval');
+          var evalstring = el.getAttribute('data-eval');
           var filename = el.getAttribute('data-filename');
           
-          if( name && script ) {
+          function regist() {
             filename = filename || ('inline-' + Math.random() + '.js');
             filename = path.join(cwd, filename);
-            fs.write(filename, 'module.exports = ' + script + ';');
+            fs.write(filename, 'module.exports = ' + evalstring + ';');
             libs.define(name, {src: path.resolve(filename)});
+          }
+          
+          if( name && evalstring ) {
+            /*if( el.async || el.defer ) {
+              console.log('async', el);
+              el.onload = function() {
+                console.log('loaded', el);
+                regist();
+              };
+            }*/
+            regist();
           }
           
           return;
