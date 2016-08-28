@@ -58,9 +58,9 @@ function init() {
       var base = path.dirname(filepath);
       
       css = css.replace(/url\s*\(\s*(['"]?)([^"'\)]*)\1\s*\)/gi, function(match) {
-        match = match.trim().substring(4, match.length - 1).split('"').join('').split('\'').join('');
-        var url = path.resolve(base, match);
-        return 'url(\"' + url + '\")';
+        match = match.trim().substring(4, match.length - 1).split('"').join('').split('\'').join('').trim();
+        if( match.toLowerCase().indexOf('data:') !== 0 ) match = path.resolve(base, match);
+        return 'url(\"' + match + '\")';
       });
       
       var style = document.createElement('style');
