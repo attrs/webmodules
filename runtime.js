@@ -860,12 +860,12 @@
           var evalstring = el.getAttribute('data-eval');
           var filename = el.getAttribute('data-filename');
           
-          function regist() {
+          var regist = function() {
             filename = filename || ('inline-' + Math.random() + '.js');
             filename = path.join(cwd, filename);
             fs.write(filename, 'module.exports = ' + evalstring + ';');
             libs.define(name, {src: path.resolve(filename)});
-          }
+          };
           
           if( name && evalstring ) {
             /*if( el.async || el.defer ) {
