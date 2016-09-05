@@ -80,7 +80,8 @@
       ,doc = document
       ,log = function() {
         console && console.log.apply(console, arguments);
-      };
+      },
+      oldie = !console || !console.log.apply ? true : false;
     
     if( !console.log.apply ) {
       log = function() {
@@ -633,9 +634,9 @@
       } else {
         throw new Error('load error(null exports or code): ' + src);
       }
-
+      
       if( fn ) {
-        if( debug ) {
+        if( debug || oldie ) {
           try {
             fn.call(module.exports, module.exports, module.require, module, module.filename, path.dirname(module.filename), win);
           } catch(err) {
@@ -1002,11 +1003,12 @@
       }
       
       WebModules.scan();
-      win.addEventListener('DOMContentLoaded', function(e) {
+      
+      var domreadyfn = function() {
         WebModules.scan();
         
         if( config('observe') !== 'false' ) {
-          if( window.MutationObserver ) {
+          if( win.MutationObserver ) {
             var observer = new MutationObserver(function(mutations) {
               mutations.forEach(function(mutation) {
                 [].forEach.call(mutation.addedNodes, function(node) {
@@ -1018,15 +1020,24 @@
               });
             });
           
-            observer.observe(document.documentElement, {
+            observer.observe(doc.documentElement, {
               childList: true,
               subtree: true
             });
           }
         }
-      });
+      }
+      
+      if( doc.addEventListener ) {
+        doc.addEventListener('DOMContentLoaded', function() {
+          domreadyfn();
+        });
+      } else if( doc.attachEvent ) {
+        doc.attachEvent("onreadystatechange", function () {
+          if(document.readyState === "complete")
+            domreadyfn();
+        });
+      }
     })();
   })();
 })();
-
-
