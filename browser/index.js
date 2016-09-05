@@ -185,7 +185,7 @@ function init() {
         link.rel = 'import';
         link.href = 'data:text/html;base64,' + encoded;
         link.onload = function(e) {
-          doc = link.import;
+          doc = link['import'];
         };
         link.onerror = function(e) {
           console.error('html import error', e);

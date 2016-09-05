@@ -1,4 +1,40 @@
 (function() {
+  if( !Array.prototype.forEach ) {
+    Array.prototype.forEach = function(callback){
+      for (var i = 0; i < this.length; i++){
+        callback.apply(this, [this[i], i, this]);
+      }
+    };
+  }
+
+  if( !Array.prototype.indexOf ) {
+    Array.prototype.indexOf = function(obj, start) {
+      for (var i = (start || 0); i < this.length; i++) {
+        if (this[i] == obj) return i;
+      }
+      return -1;
+    };
+  }
+  
+  if (!Array.prototype.lastIndexOf) {
+    Array.prototype.lastIndexOf = function( item , index ){ 
+      var index = ( index ) ? parseInt( index , 10 ) : this.length - 1; 
+      if ( index < 0 ) index = this.length + index; 
+      for ( index; index > -1; index-- ){  if ( this[ index ] === item ) return index;  } 
+      return -1; 
+    };
+  }
+  
+  if( !String.prototype.trim ) {
+    String.prototype.trim = function() {
+      return this.replace(/^\s+|\s+$/g, ''); 
+    };
+  }
+  
+  if( !document.head ) document.head = document.getElementsByTagName("head")[0];
+})();
+
+(function() {
   var node_global = {
     process: {
       nextTick: function(fn) {
@@ -26,6 +62,7 @@
       var __evaluate = window.__evaluate;
       
       if( typeof exports === 'string' ) script += '\nmodule.exports = ' + exports + ';';
+      
       return eval('/* ' + (src ? src : window.location.path) + ' */\
       script = window.script, src = window.src, \
       (function(exports, require, module, __filename, __dirname, global) { ' + script + '\n});');
@@ -44,6 +81,20 @@
       ,log = function() {
         console && console.log.apply(console, arguments);
       };
+    
+    if( !console.log.apply ) {
+      log = function() {
+        var str = '';
+        [].forEach.call(arguments, function(o) {
+          if( o === undefined ) str += '(undefined) ';
+          else if( o === null ) str += '(null) ';
+          else if( typeof o === 'string' ) str += o + ' ';
+          else if( typeof o === 'object' ) str += JSON.stringify(o, null, '  ') + ' ';
+          else str += o + ' ';
+        });
+        console.log(str.trim());
+      };
+    }
     
     var currentScript = doc.currentScript || (function() {
       var scripts = doc.getElementsByTagName('script');
@@ -83,7 +134,10 @@
         var src = this.join.apply(this, arguments);
         var a = doc.createElement('a');
         a.href = src || '';
-        return a.pathname;
+        var href = a.href;
+        href = href.substring(href.indexOf('://') + 3);
+        if( !~href.indexOf('/') ) return '/';
+        return href.substring(href.indexOf('/'));
       },
       dirname: function(src) {
         if( src[src.length - 1] === '/' ) return src.substring(0, src.length - 1);
@@ -128,13 +182,17 @@
           if( !src ) throw new Error('missing src');
           src = path.resolve(src);
           if( src in files ) return files[src];
+
           
           var text, error;
           var xhr = win.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
           xhr.open('GET', src, false);
           xhr.onreadystatechange = function(e) {
-            if( this.readyState == 4 && (this.status === 0 || (this.status >= 200 && this.status < 300) ) ) text = this.responseText;
-            else error = this.responseText;
+            if( this.readyState == 4 ) {
+              var status = this.status, restext = this.responseText;
+              if( status === 0 || (status >= 200 && status < 300) ) text = restext;
+              else error = restext;
+            }
           };
           xhr.send();
           
@@ -297,6 +355,11 @@
     var webmodulesdir = path.dirname(path.resolve(currentScript.src));
     var modulebase = path.resolve(webmodulesdir, '..');
     
+    /*console.log('currentScript.src: ', currentScript.src);
+    console.log('currentScript.src(resolve): ', path.resolve(currentScript.src));
+    console.log('webmodulesdir: ', webmodulesdir);
+    console.log('modulebase: ', modulebase);*/
+    
     if( debug ) {
       log('module base', modulebase);
       log('webmodules dir', webmodulesdir);
@@ -390,6 +453,7 @@
       
       var pkgjsonfile = dir + '/package.json';
       var manifest = loaders.load(pkgjsonfile).exports;
+      
       
       if( !manifest._files || !manifest._directories ) 
         console.warn('not found \'_files\', \'_directories\' fields in \'package.json\'', pkgjsonfile, manifest);
@@ -569,9 +633,19 @@
       } else {
         throw new Error('load error(null exports or code): ' + src);
       }
-      
-      if( fn )
-        fn.call(module.exports, module.exports, module.require, module, module.filename, path.dirname(module.filename), window);
+
+      if( fn ) {
+        if( debug ) {
+          try {
+            fn.call(module.exports, module.exports, module.require, module, module.filename, path.dirname(module.filename), win);
+          } catch(err) {
+            console.error(src + ' ' + err.message + ' ' + err.stack);
+            throw err;
+          }
+        } else {
+          fn.call(module.exports, module.exports, module.require, module, module.filename, path.dirname(module.filename), win);
+        }
+      }
       
       module.loaded = true;
       if( module.parent && !~module.parent.children.indexOf(module) ) module.parent.children.push(module);
@@ -822,7 +896,7 @@
             });
           } else {
             var result = WebModules.require('webmodules').require('node-libs-browser');
-            if( debug ) log('bootstrap', src, result);
+            if( debug ) log('bootstrap', result);
             for( var k in result )
               if( result[k] ) libs.define(k, result[k]);
           }
