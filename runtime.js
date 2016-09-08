@@ -50,12 +50,24 @@
   function __evaluate(script, src, exports) {
     var process = node_global.process;
     var Buffer = node_global.Buffer;
-    var setTimeout = node_global.setTimeout || window.setTimeout;
-    var clearTimeout = node_global.clearTimeout ||window.clearTimeout;
-    var setInterval = node_global.setInterval || window.setInterval;
-    var clearInterval = node_global.clearInterval ||window.clearInterval;
-    var setImmediate = node_global.setImmediate || window.setTimeout;
-    var clearImmediate = node_global.clearImmediate ||window.clearTimeout;
+    var setTimeout = node_global.setTimeout || function() {
+      window.setTimeout.apply(window, arguments);
+    };
+    var clearTimeout = node_global.clearTimeout || function() {
+      window.clearTimeout.apply(window, arguments);
+    };
+    var setInterval = node_global.setInterval || function() {
+      window.setInterval.apply(window, arguments);
+    };
+    var clearInterval = node_global.clearInterval || function() {
+      window.clearInterval.apply(window, arguments);
+    };
+    var setImmediate = node_global.setImmediate || function() { 
+      (window.setImmediate || window.setTimeout).apply(window, arguments);
+    };
+    var clearImmediate = node_global.clearImmediate || function() {
+      (window.clearImmediate || window.clearTimeout).apply(window, arguments);
+    };
     
     return (function() {
       var node_global = window.node_global;
