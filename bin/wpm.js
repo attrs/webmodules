@@ -89,6 +89,9 @@ commander
   .command('up [port] [docbase]')
   .alias('start')
   .description('Start Server')
+  .option('-b, --docbase [value]', 'docbase')
+  .option('-d, --defpage [value]', 'default page path for pushstate dev')
+  .option('-p, --port [value]', 'port')
   .option('-s, --self', 'self reference mode')
   .option('-o, --open [value]', 'open in browser')
   .action(function(port, docbase, options) {
@@ -103,8 +106,9 @@ commander
     
     lib.commands.up({
       host: host,
-      port: +port || 0,
-      docbase: docbase,
+      port: +options.port || +port || 9000,
+      docbase: options.docbase || docbase,
+      defpage: options.defpage,
       selfref: options.self ? true : false
     }, function(err, httpd) {
       if( err ) return error(err);
