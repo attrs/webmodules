@@ -77,14 +77,50 @@ function init() {
     }
   });
   
+  runtime.loaders.define('env', {
+    mimeTypes: ['webmodules/env'],
+    load: function(source, filepath) {
+      var o = source ? JSON.parse(source) : null;
+      for(var k in o) process.env[k] = o[k];
+      
+      return {
+        exports: o
+      };
+    }
+  });
+  
   runtime.loaders.define('less', {
     extensions: ['.less'],
     mimeTypes: ['text/less'],
     load: function(source, filepath) {
+      var vars = (function(vars) {
+        if( !vars ) return;
+        try {
+          if( typeof vars == 'string' ) vars = JSON.parse(vars);
+          if( typeof vars != 'object' ) return;
+          if( !Array.isArray(vars) ) vars = [vars];
+          
+          var matched;
+          vars.forEach && vars.forEach(function(v) {
+            if( !v.match ) return;
+            if( require('minimatch')(filepath, v.match, { matchBase: true }) ) {
+              matched = v;
+            }
+          });
+          
+          return matched;
+        } catch(err) {
+          console.warn('[webmodules] LESS_LOADER_MODIFY_VARS parse error', err);
+        }
+      })(process.env['LESS_LOADER_MODIFY_VARS']);
+      
+      if( vars ) console.info('[webmodules] less loader with modifyVars', filepath, vars);
+      
       var less = require('less/lib/less-browser/index.js')(window, {});
       var options = {
         relativeUrls: true,
         filename: filepath.replace(/#.*$/, ''),
+        modifyVars: vars || {},
         _sourceMap: {
           sourceMapFileInline: true
         }

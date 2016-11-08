@@ -195,7 +195,6 @@
           if( !src ) throw new Error('missing src');
           src = path.resolve(src);
           if( src in files ) return files[src];
-
           
           var text, error;
           var xhr = win.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
@@ -221,7 +220,7 @@
       
       var Loader = {
         load: function(src, type) {
-          var code = fs.load(src), loader, type = type || mapping[src];
+          var code = fs.load(src), loader, type = mapping[src] || type;
           if( typeof code === 'function' ) return { fn: code };
           
           if( typeof type === 'string' ) {
@@ -916,8 +915,10 @@
           
           // bind process to global if exists 'process' pacakage in bootstrap
           if( libs['process'] ) {
+            var process = WebModules.require('process');
             var env = node_global.process.env;
-            node_global.process = WebModules.require('process') || node_global.process;
+            
+            for(var k in process) node_global.process[k] = process[k];
             for(var k in env) node_global.process.env[k] = env[k];
           }
           
@@ -987,7 +988,8 @@
         if( !src ) {
           if( !script ) return;
           var extname = typeloader && typeloader.extensions ? typeloader.extensions[0] : '.js';
-          if( extname[0] !== '.' ) extname = '.' + extname;
+          if( extname && extname[0] !== '.' ) extname = '.' + extname;
+          extname = extname || '';
           
           // write to virtual fs
           src = path.join(cwd, filename || ('inline-' + Math.random() + extname));
