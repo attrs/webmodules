@@ -89,6 +89,20 @@ function init() {
     }
   });
   
+  /*
+  <script type="webmodules/env">
+    {
+      "LESS_LOADER_MODIFY_VARS": {
+        "match": "bootstrap-theme-attrs/less/index.less",
+        "@font-family-sans-serif": "'Spoqa Han Sans', 'Nanum Gothic', Arial, Helvetica, sans-serif",
+        "@font-family-serif": "'Nanum Myeongjo', Georgia, 'Times New Roman', Times, serif",
+        "@font-family-monospace": "Menlo, Monaco, Consolas, 'Courier New', monospace",
+        "@font-family-script": "'Nanum Pen Script', 'Dancing Script', 'Spoqa Han Sans', 'Nanum Gothic', Arial, Helvetica, sans-serif",
+        "@font-size-base": "13px"
+      }
+    }
+  </script>
+  */
   runtime.loaders.define('less', {
     extensions: ['.less'],
     mimeTypes: ['text/less'],
