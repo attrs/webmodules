@@ -1,4 +1,17 @@
 (function() {
+  if( !String.prototype.endsWith ) {
+    String.prototype.endsWith = function(suffix) {
+      return this.indexOf(suffix, this.length - suffix.length) !== -1;
+    };
+  }
+  
+  if( !String.prototype.startsWith ) {
+    String.prototype.startsWith = function(searchString, position){
+      position = position || 0;
+      return this.substr(position, searchString.length) === searchString;
+    };
+  }
+  
   if( !Array.prototype.forEach ) {
     Array.prototype.forEach = function(callback){
       for (var i = 0; i < this.length; i++){
@@ -16,7 +29,7 @@
     };
   }
   
-  if (!Array.prototype.lastIndexOf) {
+  if( !Array.prototype.lastIndexOf ) {
     Array.prototype.lastIndexOf = function( item , index ){ 
       var index = ( index ) ? parseInt( index , 10 ) : this.length - 1; 
       if ( index < 0 ) index = this.length + index; 
@@ -28,6 +41,36 @@
   if( !String.prototype.trim ) {
     String.prototype.trim = function() {
       return this.replace(/^\s+|\s+$/g, ''); 
+    };
+  }
+  
+  if (!Array.prototype.reduce) {
+    Array.prototype.reduce = function(callback /*, initialValue*/) {
+      'use strict';
+      if (this == null) {
+        throw new TypeError('Array.prototype.reduce called on null or undefined');
+      }
+      if (typeof callback !== 'function') {
+        throw new TypeError(callback + ' is not a function');
+      }
+      var t = Object(this), len = t.length >>> 0, k = 0, value;
+      if (arguments.length == 2) {
+        value = arguments[1];
+      } else {
+        while (k < len && !(k in t)) {
+          k++;
+        }
+        if (k >= len) {
+          throw new TypeError('Reduce of empty array with no initial value');
+        }
+        value = t[k++];
+      }
+      for (; k < len; k++) {
+        if (k in t) {
+          value = callback(value, t[k], k, t);
+        }
+      }
+      return value;
     };
   }
   
@@ -47,26 +90,31 @@
     Buffer: window.Buffer
   };
   
+  function _apply(fn, scope, argv) {
+    if( fn.apply ) fn.apply(scope, argv);
+    else Function.prototype.apply.call(fn, scope, argv);
+  }
+  
   function __evaluate(script, src, exports) {
     var process = node_global.process;
     var Buffer = node_global.Buffer;
     var setTimeout = node_global.setTimeout || function() {
-      window.setTimeout.apply(window, arguments);
+      _apply(window.setTimeout, window, arguments);
     };
     var clearTimeout = node_global.clearTimeout || function() {
-      window.clearTimeout.apply(window, arguments);
+      _apply(window.clearTimeout, window, arguments);
     };
     var setInterval = node_global.setInterval || function() {
-      window.setInterval.apply(window, arguments);
+      _apply(window.setInterval, window, arguments);
     };
     var clearInterval = node_global.clearInterval || function() {
-      window.clearInterval.apply(window, arguments);
+      _apply(window.clearInterval, window, arguments);
     };
     var setImmediate = node_global.setImmediate || function() { 
-      (window.setImmediate || window.setTimeout).apply(window, arguments);
+      _apply(window.setImmediate || window.setTimeout, window, arguments);
     };
     var clearImmediate = node_global.clearImmediate || function() {
-      (window.clearImmediate || window.clearTimeout).apply(window, arguments);
+      _apply(window.clearImmediate || window.clearTimeout, window, arguments);
     };
     
     return (function() {
@@ -92,8 +140,7 @@
       ,doc = document
       ,log = function() {
         console && console.log.apply(console, arguments);
-      },
-      oldie = !console || !console.log.apply ? true : false;
+      };
     
     if( !console.log.apply ) {
       log = function() {
@@ -646,18 +693,8 @@
         throw new Error('load error(null exports or code): ' + src);
       }
       
-      if( fn ) {
-        if( debug || oldie ) {
-          try {
-            fn.call(module.exports, module.exports, module.require, module, module.filename, path.dirname(module.filename), win);
-          } catch(err) {
-            console.error(src + ' ' + err.message + ' ' + err.stack);
-            throw err;
-          }
-        } else {
-          fn.call(module.exports, module.exports, module.require, module, module.filename, path.dirname(module.filename), win);
-        }
-      }
+      if( fn )
+        fn.call(module.exports, module.exports, module.require, module, module.filename, path.dirname(module.filename), win);
       
       module.loaded = true;
       if( module.parent && !~module.parent.children.indexOf(module) ) module.parent.children.push(module);
