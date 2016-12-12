@@ -91,30 +91,30 @@
   };
   
   function _apply(fn, scope, argv) {
-    if( fn.apply ) fn.apply(scope, argv);
-    else Function.prototype.apply.call(fn, scope, argv);
+    if( fn.apply ) return fn.apply(scope, argv);
+    else return Function.prototype.apply.call(fn, scope, argv);
   }
   
   function __evaluate(script, src, exports) {
     var process = node_global.process;
     var Buffer = node_global.Buffer;
     var setTimeout = node_global.setTimeout || function() {
-      _apply(window.setTimeout, window, arguments);
+      return _apply(window.setTimeout, window, arguments);
     };
     var clearTimeout = node_global.clearTimeout || function() {
-      _apply(window.clearTimeout, window, arguments);
+      return _apply(window.clearTimeout, window, arguments);
     };
     var setInterval = node_global.setInterval || function() {
-      _apply(window.setInterval, window, arguments);
+      return _apply(window.setInterval, window, arguments);
     };
     var clearInterval = node_global.clearInterval || function() {
-      _apply(window.clearInterval, window, arguments);
+      return _apply(window.clearInterval, window, arguments);
     };
     var setImmediate = node_global.setImmediate || function() { 
-      _apply(window.setImmediate || window.setTimeout, window, arguments);
+      return _apply(window.setImmediate || window.setTimeout, window, arguments);
     };
     var clearImmediate = node_global.clearImmediate || function() {
-      _apply(window.clearImmediate || window.clearTimeout, window, arguments);
+      return _apply(window.clearImmediate || window.clearTimeout, window, arguments);
     };
     
     return (function() {
