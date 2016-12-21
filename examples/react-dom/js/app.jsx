@@ -5,6 +5,8 @@ var Avatar = require('./avatar.jsx');
 var AvatarES2015 = require('./avatar.es2015.jsx').Avatar;
 
 window.addEventListener('DOMContentLoaded', function() {
+  console.error('app');
+  
   ReactDOM.render(
     React.createElement(Avatar, {
       pagename: 'Engineering'

@@ -20,6 +20,7 @@ class PageLink extends React.Component {
 
 class Avatar extends React.Component {
   render() {
+    console.error('avatar');
     return (
       <div>
         <PagePic pagename={this.props.pagename} />

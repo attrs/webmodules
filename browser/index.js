@@ -5,14 +5,18 @@ function init() {
   runtime.loaders.define('es2016', {
     extensions: ['.es7'],
     mimeTypes: ['text/es7', 'text/es2016'],
-    load: function(source) {
+    load: function(source, file) {
       var transform = require('babel-standalone').transform(source, {
         presets: ['es2015', 'stage-0'],
         sourceMaps: true
       });
       
+      var map = transform.map;
+      map.file = file;
+      map.sources[0] = file;
+      
       return {
-        sourcemap: transform,
+        map: map,
         code: transform.code
       };
     }
@@ -21,14 +25,18 @@ function init() {
   runtime.loaders.define('es2015', {
     extensions: ['.es6'],
     mimeTypes: ['text/es6', 'text/es2015'],
-    load: function(source) {
+    load: function(source, file) {
       var transform = require('babel-standalone').transform(source, {
         presets: ['es2015'],
         sourceMaps: true
       });
       
+      var map = transform.map;
+      map.file = file;
+      map.sources[0] = file;
+      
       return {
-        sourcemap: transform,
+        map: map,
         code: transform.code
       };
     }
@@ -37,14 +45,18 @@ function init() {
   runtime.loaders.define('react', {
     extensions: ['.jsx'],
     mimeTypes: ['text/react', 'text/jsx'],
-    load: function(source) {
+    load: function(source, file) {
       var transform = require('babel-standalone').transform(source, {
         presets: ['es2015', 'stage-0', 'react'],
         sourceMaps: true
       });
       
+      var map = transform.map;
+      map.file = file;
+      map.sources[0] = file;
+      
       return {
-        sourcemap: transform,
+        map: map,
         code: transform.code
       };
     }
@@ -53,9 +65,9 @@ function init() {
   runtime.loaders.define('css', {
     extensions: ['.css'],
     mimeTypes: ['text/css', 'text/stylesheet'],
-    load: function(css, filepath) {
+    load: function(css, file) {
       var path = require('path');
-      var base = path.dirname(filepath);
+      var base = path.dirname(file);
       
       css = css.replace(/url\s*\(\s*(['"]?)([^"'\)]*)\1\s*\)/gi, function(match) {
         match = match.trim().substring(4, match.length - 1).split('"').join('').split('\'').join('').trim();
@@ -65,8 +77,10 @@ function init() {
       
       var style = document.createElement('style');
       style.setAttribute('type', 'text/css');
-      style.setAttribute('data-src', filepath);
+      style.setAttribute('data-src', file);
       document.head.appendChild(style);
+      
+      css += '\n/*# sourceURL=' + file + ' */';
       
       if (style.styleSheet) style.styleSheet.cssText = css;
       else style.innerHTML = css;
@@ -79,7 +93,7 @@ function init() {
   
   runtime.loaders.define('env', {
     mimeTypes: ['webmodules/env'],
-    load: function(source, filepath) {
+    load: function(source, file) {
       var o = source ? JSON.parse(source) : null;
       for(var k in o) process.env[k] = o[k];
       
@@ -106,7 +120,7 @@ function init() {
   runtime.loaders.define('less', {
     extensions: ['.less'],
     mimeTypes: ['text/less'],
-    load: function(source, filepath) {
+    load: function(source, file) {
       var vars = (function(vars) {
         if( !vars ) return;
         try {
@@ -117,7 +131,7 @@ function init() {
           var matched;
           vars.forEach && vars.forEach(function(v) {
             if( !v.match ) return;
-            if( require('minimatch')(filepath, v.match, { matchBase: true }) ) {
+            if( require('minimatch')(file, v.match, { matchBase: true }) ) {
               matched = v;
             }
           });
@@ -128,26 +142,47 @@ function init() {
         }
       })(process.env['LESS_LOADER_MODIFY_VARS']);
       
-      if( vars ) console.info('[webmodules] less loader with modifyVars', filepath, vars);
+      if( vars ) console.info('[webmodules] less loader with modifyVars', file, vars);
       
       var less = require('less/lib/less-browser/index.js')(window, {});
+      var sourcemap = require('./source-map.js');
+      
+      less.environment.getSourceMapGenerator = function() {
+        return sourcemap.SourceMapGenerator;
+      };
+      
+      less.environment.encodeBase64 = function(str) {
+        return btoa(str);
+      };
+      
       var options = {
         relativeUrls: true,
-        filename: filepath.replace(/#.*$/, ''),
+        filename: file.replace(/#.*$/, ''),
         modifyVars: vars || {},
-        _sourceMap: {
-          sourceMapFileInline: true
-        }
+        sourceMap: true
       };
       
       var style = document.createElement('style');
       style.setAttribute('type', 'text/css');
-      style.setAttribute('data-src', filepath);
+      style.setAttribute('data-src', file);
       document.head.appendChild(style);
       
       less.render(source, options).then(function(result) {
-        if (style.styleSheet) style.styleSheet.cssText = result.css;
-        else style.innerHTML = result.css;
+        var css = result.css;
+        var map = result.map;
+        
+        if( map ) {
+          map = JSON.parse(result.map);
+          map.file = file || map.file;
+          map.sourceRoot = location.protocol + "//" + location.hostname + (location.port ? ':' + location.port: '');
+          css += "\n/*# sourceMappingURL=data:application/json;base64," + 
+                 btoa(unescape(encodeURIComponent(JSON.stringify(map)))) + ' */';
+        }
+        
+        css += '\n/*# sourceURL=' + file + ' */';
+        
+        if (style.styleSheet) style.styleSheet.cssText = css;
+        else style.innerHTML = css;
       });
       
       return {
@@ -159,17 +194,24 @@ function init() {
   runtime.loaders.define('coffee', {
     extensions: ['.coffee'],
     mimeTypes: ['text/coffee', 'text/coffee-script', 'text/coffeescript'],
-    load: function(source) {
+    load: function(source, file) {
       var coffee = require('coffee-script');
       var compiled = coffee.compile(source, {
-        bare:true,
-        header:true,
-        sourceMap:true
+        bare: true,
+        header: true,
+        sourceMap: true
       });
+      
+      var map = compiled.v3SourceMap;
+      if( map ) {
+        map = JSON.parse(map);
+        map.file = file;
+        map.sources[0] = file;
+      }
       
       return {
         code: compiled.js,
-        sourcemap: compiled.v3SourceMap
+        map: map
       };
     }
   });

@@ -95,7 +95,12 @@
     else return Function.prototype.apply.call(fn, scope, argv);
   }
   
-  function __evaluate(source, src, exports) {
+  function __evaluate(options) {
+    var code = options.code;
+    var map = options.map;
+    var filename = options.filename;
+    var exports = options.exports;
+    
     var process = node_global.process;
     var Buffer = node_global.Buffer;
     var setTimeout = node_global.setTimeout || function() {
@@ -121,14 +126,31 @@
       var node_global = window.node_global;
       var __evaluate = window.__evaluate;
       
-      if( typeof exports === 'string' ) source += '\nmodule.exports = ' + exports + ';';
+      if( typeof exports === 'string' ) code += '\nmodule.exports = ' + exports + ';';
       
-      src = src || window.location.path;
+      /*map = map || {
+        version: 3,
+        sources: [filename],
+        sourcesContent: [code],
+        names: [],
+        mappings: '',
+        file: filename
+      };
+      console.log('map', JSON.stringify(map));
+      */
       
-      return eval('/* ' + src + ' */\
+      code = '/* ' + (filename || 'unknown') + ' */\
       script = window.script, src = window.src, \
-      (function(exports, require, module, __filename, __dirname, global) { ' + source + '\n});\n\
-      //# sourceURL=' + src);
+      (function(exports, require, module, __filename, __dirname, global) { ' + code + '\n});';
+      
+      if( map ) {
+        map.file = filename || map.file;
+        code += "\n//# sourceMappingURL=data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify(map))));
+      } else if( filename ) {
+        code += '\n//# sourceURL=' + filename;
+      }
+      
+      return eval(code);
     })();
   }
   
@@ -498,10 +520,6 @@
       }
     };
     
-    function evaluate(script, src, exports) {
-      return __evaluate(script, src, exports);
-    }
-    
     var packageCache = {}, cache = {}, dirmap = [];
     function existsDirectory(dir) {
       var dir = path.resolve(dir);
@@ -690,7 +708,11 @@
       } else if( 'fn' in loaded ) {
         fn = loaded.fn;
       } else if( 'code' in loaded ) {
-        fn = evaluate(loaded.code, module.filename);
+        fn = __evaluate({
+          code: loaded.code,
+          map: loaded.map,
+          filename: module.filename
+        });
       } else {
         throw new Error('load error(null exports or code): ' + src);
       }
@@ -838,7 +860,7 @@
       load: load,
       loadPackage: loadPackage,
       getPackage: getPackage,
-      evaluate: evaluate,
+      evaluate: __evaluate,
       cache: cache,
       packages: packageCache,
       libs: libs,
@@ -849,6 +871,13 @@
     
     // exports to global & scanning
     (function() {
+      var uid = (function() {
+        var seq = 1;
+        return function() {
+          return 'inline@' + seq++;
+        };
+      })();
+      
       if( currentScript.hasAttribute('data-export') ) {
         (function() {
           var require = typeof win.require === 'function' ? win.require : null;
@@ -937,7 +966,7 @@
               if( !src ) {
                 if( !script ) return;
                 // write to virtual fs
-                src = path.join(cwd, 'inline-' + Math.random() + '.js');
+                src = path.join(cwd, uid() + '.js');
                 fs.write(src, script);
               }
               
@@ -988,7 +1017,7 @@
           var filename = el.getAttribute('data-filename');
           
           var regist = function() {
-            filename = filename || ('inline-' + Math.random() + '.js');
+            filename = filename || (uid() + '.js');
             filename = path.join(cwd, filename);
             fs.write(filename, 'module.exports = ' + evalstring + ';');
             libs.define(name, {src: path.resolve(filename)});
@@ -1031,7 +1060,7 @@
           extname = extname || '';
           
           // write to virtual fs
-          src = path.join(cwd, filename || ('inline-' + Math.random() + extname));
+          src = path.join(cwd, filename || (uid() + extname));
           fs.write(src, script);
         }
         

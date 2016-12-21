@@ -2,6 +2,7 @@ var React = require('react');
 
 var Avatar = React.createClass({
   render: function() {
+    console.error('avatar');
     return (
       <div>
         <PagePic pagename={this.props.pagename} />
