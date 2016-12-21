@@ -95,7 +95,7 @@
     else return Function.prototype.apply.call(fn, scope, argv);
   }
   
-  function __evaluate(script, src, exports) {
+  function __evaluate(source, src, exports) {
     var process = node_global.process;
     var Buffer = node_global.Buffer;
     var setTimeout = node_global.setTimeout || function() {
@@ -121,11 +121,14 @@
       var node_global = window.node_global;
       var __evaluate = window.__evaluate;
       
-      if( typeof exports === 'string' ) script += '\nmodule.exports = ' + exports + ';';
+      if( typeof exports === 'string' ) source += '\nmodule.exports = ' + exports + ';';
       
-      return eval('/* ' + (src ? src : window.location.path) + ' */\
+      src = src || window.location.path;
+      
+      return eval('/* ' + src + ' */\
       script = window.script, src = window.src, \
-      (function(exports, require, module, __filename, __dirname, global) { ' + script + '\n});');
+      (function(exports, require, module, __filename, __dirname, global) { ' + source + '\n});\n\
+      //# sourceURL=' + src);
     })();
   }
   
@@ -256,7 +259,6 @@
           xhr.send();
           
           if( error ) throw new Error('Cannot find module \'' + src + '\': ' + error);
-          text = text.split('//# sourceMappingURL=').join('//'); // TODO: validate sourcemap URL
           return text;
         }
       }
