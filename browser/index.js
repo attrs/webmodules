@@ -174,9 +174,16 @@ function init() {
         if( map ) {
           map = JSON.parse(result.map);
           map.file = file || map.file;
-          map.sourceRoot = location.protocol + "//" + location.hostname + (location.port ? ':' + location.port: '');
-          css += "\n/*# sourceMappingURL=data:application/json;base64," + 
-                 btoa(unescape(encodeURIComponent(JSON.stringify(map)))) + ' */';
+          map.sourceRoot = location.origin;
+          
+          var sources = [];
+          map.sources.forEach(function(src) {
+            if( src[0] !== '/' ) return;
+            sources.push(src.substring(1));
+          });
+          map.sources = sources;
+          
+          css += "\n/*# sourceMappingURL=data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify(map)))) + ' */';
         }
         
         css += '\n/*# sourceURL=' + file + ' */';
