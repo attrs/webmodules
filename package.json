@@ -1,6 +1,6 @@
 {
   "name": "webmodules",
-  "version": "0.1.42",
+  "version": "0.1.43",
   "description": "webmodules",
   "main": "lib/index.js",
   "browser": "browser/index.js",
@@ -26,7 +26,6 @@
     "minimatch": "^3.0.0",
     "open": "0.0.5",
     "node-libs-browser": "^1.0.0",
-    
     "fs-extra": "^0.26.7",
     "inquirer": "^1.0.0",
     "less": "^2.6.1",
