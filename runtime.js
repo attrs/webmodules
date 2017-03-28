@@ -768,6 +768,7 @@
         
         if( files && ~files.indexOf(relpath) ) return src;
         else if( files && ~files.indexOf(relpath + '.js') ) return src + '.js';
+        else if( files && ~files.indexOf(relpath + '.json') ) return src + '.json';
         else if( files && ~files.indexOf(relpath + 'package.json') ) return loadPackage(src).main;
         else if( dirs && ~dirs.indexOf(relpath) ) return src + '/index.js';
         
