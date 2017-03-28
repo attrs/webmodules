@@ -1,6 +1,6 @@
 # webmodules
 
-Module Management for Web Development.
+browser commonjs runtime
 
 [![NPM Version][npm-version]][npm-url] [![NPM Downloads][npm-total]][npm-url] [![NPM Downloads][npm-month]][npm-url] [![NPM Downloads][license]][npm-url] [![Join the chat at https://gitter.im/attrs/webmodules][gitter]][gitter-link]
 
@@ -12,64 +12,26 @@ Module Management for Web Development.
 [gitter]: https://badges.gitter.im/attrs/webmodules.svg
 [gitter-link]: https://gitter.im/attrs/webmodules?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
-
-Offers the following features:
-- Installing web modules to `web_modules` folder to separate them from `node_modules`.
-- Provides commonjs browser runtime that can be used in a webpage.
-- Assist in installing external dependencies when using webpack and browserify.
-
-
-## Installation
+## Install
 ```sh
-$ npm install -g webmodules
+$ npm i -g webmodules
 ```
 
 ## Usage
-### Install Modules
 ```sh
-$ wpm install                             # install browserDependencies(package.json)
-$ wpm install packagename                 # from npm
-$ wpm install packagename@version
-$ wpm install packagename --save          # save to package.json
-$ wpm install githubuser/project          # from github
-$ wpm install bitbucket:user/project      # from bitbucket
-$ wpm install bower:packagename           # from bower
-$ wpm install bower:packagename@version
-$ wpm install installname[packagename]    # change module installation name
-$ wpm install installname[bower:packagename]
-...
-```
-
-- Packages are located in `web_modules` folder when installed .
-- Also you can choose your own installation folder via `.webmodulesrc` file.  (but it's not applied to sub-modules)
-
-```json
-{
-    "directory": "path"
-}
-```
-
-### Run Your Modules
-> You can use browser runtime in a web page when you'd like to develop without a build process.
-> es2015(*.es6), jsx(*.jsx), coffee(*.coffee), less(*.less), css(*.css), html(*.html) are supported.
-
-- Prepare for example
-
-```sh
-$ npm install -g webmodules
 $ mkdir myapp
 $ cd myapp
-$ wpm install jquery
+$ npm install jquery
 ```
 
-- `index.html`
+- `public/index.html`
 
 ```html
 <!DOCTYPE html>
 <html>
 <head>
   <script type="text/commonjs" data-src="app.js"></script>
-  <script src="/web_modules/webmodules/runtime.js"></script>
+  <script src="/node_modules/webmodules/runtime.js"></script>
 </head>
 <body>
   <div id="content"></div>
@@ -77,7 +39,7 @@ $ wpm install jquery
 </html>
 ```
 
-- `app.js`
+- `public/app.js`
 
 ```javascript
 var $ = require('jquery');
@@ -88,7 +50,7 @@ $(document).ready(function($) {
 });
 ```
 
-- `sub.js`
+- `public/sub.js`
 
 ```javascript
 exports.value = 'world';
@@ -97,7 +59,29 @@ exports.value = 'world';
 - launch
 
 ```sh
-$ wpm up . --open
+$ wpm up ./public
+```
+
+## Programmatically
+
+```sh
+$ npm i webmodules express
+```
+
+- lib/index.js
+
+```javascript
+var webmodules = require('webmodules');
+var express = require('express');
+
+var app = express()
+.use('/node_modules', webmodules.router())
+.use('/', express.static('public'))
+.listen(9000);
+```
+
+```sh
+$ node lib
 ```
 
 ## Examples
