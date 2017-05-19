@@ -599,11 +599,12 @@
           
           for(var k in manifest.browser) {
             var v = manifest.browser[k];
-            if( bpd[k] || pd[k] || bdep[k] || dep[k] || ~libs[k] || typeof v !== 'string' ) {
+            
+            if( bpd[k] || pd[k] || bdep[k] || dep[k] || libs[k] || typeof v !== 'string' ) {
               if( debug ) log('swap package', k, v, manifest);
             } else {
-              if( debug ) log('swap file', k, v, manifest);
               aliases[path.resolve(path.join(dir, k))] = path.resolve(path.join(dir, v));
+              if( debug ) log('swap file', k, v, path.resolve(path.join(dir, k)), '->', path.resolve(path.join(dir, v)));
             }
           }
         })();
@@ -630,6 +631,7 @@
       
       // main 확정
       main = path.resolve(path.join(dir, main || 'index.js'));
+      main = (aliases && aliases[main]) || main;
       
       pkg.main = main;
       pkg.aliases = aliases;
