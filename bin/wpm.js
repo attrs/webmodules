@@ -3,7 +3,6 @@
 var chalk = require('chalk');
 var commander = require('commander');
 var async = require('async');
-var open = require('open');
 
 var pkg = require('../package.json');
 var lib = require('../');
@@ -17,83 +16,16 @@ function error(err) {
 
 process.title = pkg.name;
 
-commander
-  .version(pkg.version)
-  .command('install [pkgs...]')
-  .alias('i')
-  .option('-s, --save', 'save')
-  .description('Install Modules')
-  .action(function(pkgs, options) {
-    lib.commands.install(pkgs, {
-      save: options.save
-    }, function(err, pkgs) {
-      if( err ) return error(err);
-      console.log('%s package(s) installed', pkgs.length);
-      pkgs.forEach(function(pkg) {
-        console.log('- ' + pkg.name + '@' + pkg.version);
-      });
-    });
-  })
-  .on('--help', function() {
-    console.log('  Examples:');
-    console.log();
-    console.log('  $ wpm install npm_pacakge_name');
-    console.log('  $ wpm install npm_pacakge_name --save');
-    console.log('  $ wpm install bower:bower_pacakge_name');
-    console.log();
-  });
-
-commander
-  .command('uninstall [pkgs...]')
-  .alias('u')
-  .option('-s, --save', 'save')
-  .description('Uninstall Modules')
-  .action(function(pkgs, options) {
-    lib.commands.uninstall(pkgs, {
-      save: options.save
-    }, function(err, pkgs) {
-      if( err ) return error(err);
-      console.log('%s package(s) uninstalled', pkgs.length);
-      pkgs.forEach(function(pkg) {
-        console.log('- ' + pkg.name + '@' + pkg.version);
-      });
-    });
-  })
-  .on('--help', function() {
-    console.log('  Examples:');
-    console.log();
-    console.log('  $ wpm uninstall npm_pacakge_name');
-    console.log('  $ wpm uninstall npm_pacakge_name --save');
-    console.log('  $ wpm uninstall bower_pacakge_name');
-    console.log();
-  });
-
-commander
-  .command('init')
-  .description('Init Module')
-  .action(function(options) {
-    lib.commands.init({
-      interactive: true
-    }, function(err) {
-      if( err ) return error(err);
-    });
-  })
-  .on('--help', function() {
-    console.log('  Examples:');
-    console.log();
-    console.log('  $ wpm init');
-    console.log();
-  });
+commander.version(pkg.version);
 
 commander
   .command('up [port] [docbase]')
   .alias('start')
   .description('Start Server')
   .option('-b, --docbase [value]', 'docbase')
-  .option('-d, --defpage [value]', 'default page path for pushstate dev')
+  .option('-d, --defpage [value]', 'default page path for single page application')
   .option('-p, --port [value]', 'port')
   .option('-s, --self', 'self reference mode')
-  .option('-o, --open [value]', 'open in browser')
   .action(function(port, docbase, options) {
     var host;
     
@@ -115,12 +47,6 @@ commander
       
       console.log(chalk.cyan('docbase is'), httpd.docbase);
       console.log(chalk.cyan('httpd listening at'), httpd.address.address + ':' + httpd.address.port);
-      if( options.open ) {
-        open(
-          'http://' + (httpd.address.address === '0.0.0.0' ? 'localhost' : httpd.address.address) + ':' + httpd.address.port, 
-          typeof options.open === 'string' ? options.open : null
-        );
-      }
     });
   })
   .on('--help', function() {

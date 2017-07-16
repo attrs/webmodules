@@ -9,41 +9,34 @@
   "homepage": "https://github.com/attrs/webmodules",
   "license": "MIT",
   "scripts": {
-    "prepublish": "gulp"
+    "prepare": "gulp"
   },
   "bin": {
     "wpm": "bin/wpm.js"
   },
   "dependencies": {
-    "async": "^1.5.2",
-    "chalk": "^1.1.3",
-    "commander": "^2.9.0",
-    "connect-static-file": "^1.1.2",
-    "etag": "^1.7.0",
-    "finalhandler": "^0.4.1",
-    "serve-static": "^1.10.2",
-    "fresh": "^0.3.0",
-    "minimatch": "^3.0.0",
-    "open": "0.0.5",
-    "node-libs-browser": "^1.0.0",
-    "fs-extra": "^0.26.7",
-    "inquirer": "^1.0.0",
-    "less": "^2.6.1",
-    "semver": "^5.1.0",
-    "npm": "^3.8.6",
-    "babel-standalone": "^6.7.4",
-    "coffee-script": "^1.10.0",
-    "bower": "^1.6.9"
+    "async": "^2.5.0",
+    "chalk": "^2.0.1",
+    "commander": "^2.11.0",
+    "connect-static-file": "^1.2.0",
+    "etag": "^1.8.0",
+    "finalhandler": "^1.0.3",
+    "serve-static": "^1.12.3",
+    "fresh": "^0.5.0",
+    "minimatch": "^3.0.4",
+    "node-libs-browser": "^2.0.0",
+    "less": "^2.7.2",
+    "babel-standalone": "^6.25.0",
+    "coffee-script": "^1.12.6"
   },
   "devDependencies": {
     "gulp": "^3.9.1",
     "gulp-rename": "^1.2.2",
-    "gulp-rimraf": "^0.2.0",
-    "gulp-uglify": "^1.5.3",
-    "gulp-util": "^3.0.7"
+    "gulp-rimraf": "^0.2.1",
+    "gulp-uglify": "^3.0.0",
+    "gulp-util": "^3.0.8"
   },
   "files": [
-    "npm-shrinkwrap.json",
     "bin",
     "lib",
     "browser",
@@ -58,11 +51,6 @@
     "webmodule",
     "browser",
     "browserify",
-    "webpack",
-    "import",
-    "es6",
-    "es2015",
-    "jsx",
-    "react"
+    "import"
   ]
 }

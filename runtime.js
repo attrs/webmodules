@@ -1104,7 +1104,7 @@
                 });
               });
             });
-          
+            
             observer.observe(doc.documentElement, {
               childList: true,
               subtree: true
@@ -1113,16 +1113,9 @@
         }
       }
       
-      if( doc.addEventListener ) {
-        doc.addEventListener('DOMContentLoaded', function() {
-          domreadyfn();
-        });
-      } else if( doc.attachEvent ) {
-        doc.attachEvent("onreadystatechange", function () {
-          if(document.readyState === "complete")
-            domreadyfn();
-        });
-      }
+      doc.addEventListener('DOMContentLoaded', function() {
+        domreadyfn();
+      });
     })();
   })();
 })();

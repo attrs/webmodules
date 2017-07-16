@@ -292,7 +292,7 @@ function init() {
         };
         document.head.appendChild(link);
       } else {
-        err = new Error('browser does not supports HTMlImports');
+        err = new Error('browser does not supports HTMLImports');
         console.warn(err.message);
       }
       
