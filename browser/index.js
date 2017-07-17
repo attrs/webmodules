@@ -91,18 +91,6 @@ function init() {
     }
   });
   
-  runtime.loaders.define('env', {
-    mimeTypes: ['webmodules/env'],
-    load: function(source, file) {
-      var o = source ? JSON.parse(source) : null;
-      for(var k in o) process.env[k] = o[k];
-      
-      return {
-        exports: o
-      };
-    }
-  });
-  
   /*
   <script type="webmodules/env">
     {
@@ -117,6 +105,18 @@ function init() {
     }
   </script>
   */
+  runtime.loaders.define('env', {
+    mimeTypes: ['webmodules/env'],
+    load: function(source, file) {
+      var o = source ? JSON.parse(source) : null;
+      for(var k in o) process.env[k] = o[k];
+      
+      return {
+        exports: o
+      };
+    }
+  });
+
   runtime.loaders.define('less', {
     extensions: ['.less'],
     mimeTypes: ['text/less'],
@@ -239,16 +239,6 @@ function init() {
       
       return {
         code: source
-      };
-    }
-  });
-  
-  runtime.loaders.define('text', {
-    extensions: ['.txt', '.text', '.htm', '.html'],
-    mimeTypes: ['text/plain'],
-    load: function(source) {
-      return {
-        exports: source
       };
     }
   });
