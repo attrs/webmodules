@@ -128,6 +128,17 @@
       
       if( typeof exports === 'string' ) code += '\nmodule.exports = ' + exports + ';';
       
+      /*map = map || {
+        version: 3,
+        sources: [filename],
+        sourcesContent: [code],
+        names: [],
+        mappings: '',
+        file: filename
+      };
+      console.log('map', JSON.stringify(map));
+      */
+      
       code = '/* ' + (filename || 'unknown') + ' */\
       script = window.script, src = window.src, \
       (function(exports, require, module, __filename, __dirname, global) { ' + code + '\n});';
@@ -151,7 +162,24 @@
       ,NODE_MODULES = 'node_modules'
       ,minimatch
       ,win = window
-      ,doc = document;
+      ,doc = document
+      ,log = function() {
+        console && console.log.apply(console, arguments);
+      };
+    
+    if( !console.log.apply ) {
+      log = function() {
+        var str = '';
+        [].forEach.call(arguments, function(o) {
+          if( o === undefined ) str += '(undefined) ';
+          else if( o === null ) str += '(null) ';
+          else if( typeof o === 'string' ) str += o + ' ';
+          else if( typeof o === 'object' ) str += JSON.stringify(o, null, '  ') + ' ';
+          else str += o + ' ';
+        });
+        console.log(str.trim());
+      };
+    }
     
     var currentScript = doc.currentScript || (function() {
       var scripts = doc.getElementsByTagName('script');
@@ -171,16 +199,6 @@
     }
     
     var path = {
-      baseurl: function(src) {
-        if( !~src.indexOf('://') ) return '';
-        var arr = src.split('://');
-        return arr[0] + '://' + arr[1].split('/')[0];
-      },
-      pathname: function(src) {
-        if( !~src.indexOf('://') ) return src;
-        var arr = src.split('://');
-        return '/' + arr[1].split('/').slice(1).join('/') || '';
-      },
       join: function() {
         var filepath = '';
         [].forEach.call(arguments, function(arg) {
@@ -201,9 +219,6 @@
         var src = this.join.apply(this, arguments);
         var a = doc.createElement('a');
         a.href = src || '';
-        
-        if( ~src.indexOf('://') ) return a.href;
-        
         var href = a.href;
         href = href.substring(href.indexOf('://') + 3);
         if( !~href.indexOf('/') ) return '/';
@@ -234,7 +249,7 @@
         write: function(src, contents) {
           if( !src ) throw new Error('missing src');
           src = path.resolve(src);
-          if( debug ) console.log('fs write', src);
+          if( debug ) log('fs write', src);
           files[src] = contents;
           return this;
         },
@@ -302,7 +317,7 @@
             loader = Loader.findByExtension(extension) || Loader.getDefault();
           }
           
-          if( debug ) console.log('loader', src, type, loader);
+          if( debug ) log('loader', src, type, loader);
           return loader.load(code, src);
         },
         pattern: function(pattern, type) {
@@ -332,18 +347,18 @@
             extensionmap[extension] = loader;
             extensions.push(extension);
           });
-          
+        
           (options.mimeTypes || []).forEach(function(mime) {
             mimemap[mime] = loader;
             mimeTypes.push(mime);
           });
-          
+        
           loader.mimeTypes = mimeTypes;
           loader.extensions = extensions;
           loaders[name] = loader;
-          
+        
           if( options.isDefault ) defaultLoader = loader;
-          
+        
           return this;
         },
         names: function() { 
@@ -394,16 +409,6 @@
         }
       });
       
-      Loader.define('text', {
-        extensions: ['.txt', '.text', '.htm', '.html'],
-        mimeTypes: ['text/plain'],
-        load: function(source) {
-          return {
-            exports: source
-          };
-        }
-      });
-      
       return Loader;
     })();
     
@@ -431,22 +436,71 @@
     
     var debug = config('debug') === 'true' ? true : false;
     var webmodulesdir = path.dirname(path.resolve(currentScript.src));
-    var modulebase = currentScript.getAttribute('data-base') || path.resolve(webmodulesdir, '..');
+    var modulebase = path.resolve(webmodulesdir, '..');
+    
+    /*console.log('currentScript.src: ', currentScript.src);
+    console.log('currentScript.src(resolve): ', path.resolve(currentScript.src));
+    console.log('webmodulesdir: ', webmodulesdir);
+    console.log('modulebase: ', modulebase);*/
     
     if( debug ) {
-      console.log('currentScript.src', currentScript.src);
-      console.log('currentScript.src(resolve)', path.resolve(currentScript.src));
-      console.log('webmodules dir', webmodulesdir);
-      console.log('module base', modulebase);
-      console.log('base pacakge', path.join(path.dirname(currentScript.src), '..', '..'), mainpkg);
+      log('module base', modulebase);
+      log('webmodules dir', webmodulesdir);
+      log('base pacakge', path.join(path.dirname(currentScript.src), '..', '..'), mainpkg);
     }
+    
+    /*var events = (function() {
+      var listeners = {};
+      
+      function fire(type, detail) {
+        var self = this;
+        (listeners[type] || []).forEach(function(listener) {
+          listener.call(self, {
+            type: type,
+            detail: detail
+          });
+        });
+        return this;
+      }
+      
+      function on(type, fn) {
+        listeners[type] = listeners[type] || [];
+        listeners[type].push(fn);
+        return this;
+      }
+      
+      function once(type, fn) {
+        var self = this;
+        var wrap = function(e) {
+          off(type, wrap);
+          return fn.call(self, e);
+        };
+        on(type, wrap);
+        return this;
+      }
+      
+      function off(type, fn) {
+        var fns = this.listeners[type];
+        if( fns )
+          for(var i;~(i = fns.indexOf(fn));) fns.splice(i, 1);
+        
+        return this;
+      }
+      
+      return {
+        fire: fire,
+        on: on,
+        once: once,
+        off: off
+      }
+    })();*/
     
     var libs = {
       define: function(name, config) {
         if( !name ) throw new Error('define library: missing name');
         if( typeof config === 'string' ) config = {src:config};
         if( !(config.src || config.exports) ) throw new Error('define library: config object must contains src or exports');
-        if( debug ) console.log('define library', name, config);
+        if( debug ) log('define library', name, config);
         libs[name] = config;
         return libs;
       },
@@ -478,6 +532,7 @@
       
       var pkgjsonfile = dir + '/package.json';
       var manifest = loaders.load(pkgjsonfile).exports;
+      
       
       if( !manifest._files || !manifest._directories ) 
         console.warn('not found \'_files\', \'_directories\' fields in \'package.json\'', pkgjsonfile, manifest);
@@ -546,10 +601,10 @@
             var v = manifest.browser[k];
             
             if( bpd[k] || pd[k] || bdep[k] || dep[k] || libs[k] || typeof v !== 'string' ) {
-              if( debug ) console.log('swap package', k, v, manifest);
+              if( debug ) log('swap package', k, v, manifest);
             } else {
               aliases[path.resolve(path.join(dir, k))] = path.resolve(path.join(dir, v));
-              if( debug ) console.log('swap file', k, v, path.resolve(path.join(dir, k)), '->', path.resolve(path.join(dir, v)));
+              if( debug ) log('swap file', k, v, path.resolve(path.join(dir, k)), '->', path.resolve(path.join(dir, v)));
             }
           }
         })();
@@ -572,7 +627,7 @@
         }
       }
       
-      if( debug ) console.log('package loaded', pkg.name, manifest.name, dir, main);
+      if( debug ) log('package loaded', pkg.name, manifest.name, dir, main);
       
       // main 확정
       main = path.resolve(path.join(dir, main || 'index.js'));
@@ -586,13 +641,10 @@
     }
     
     function getPackage(src) {
-      if( debug ) console.log('get package', src);
+      if( debug ) log('get package', src);
       
       // TODO: 좀 더 정확하게 개선필요
-      var baseurl = path.baseurl(src);
-      var pathname = path.pathname(src);
-      var paths = path.pathname(src).split('/');
-      
+      var paths = src.split('/');
       if( ~paths.indexOf(WEB_MODULES) || ~paths.indexOf(NODE_MODULES) ) {
         var pos = paths.lastIndexOf(WEB_MODULES);
         if( paths.lastIndexOf(NODE_MODULES) > pos ) pos = paths.lastIndexOf(NODE_MODULES);
@@ -601,7 +653,7 @@
         if( paths[pos + 1][0] === '@' ) dir = paths.slice(0, pos + 3).join('/');
         else dir = paths.slice(0, pos + 2).join('/');
         
-        return loadPackage(baseurl + dir);
+        return loadPackage(dir);
       } else if( !src.indexOf(webmodulesdir) ) { // when src is webmodules package
         return loadPackage(webmodulesdir);
       } else if( !src.indexOf(modulebase) && paths.length >= 3 ) {
@@ -609,7 +661,7 @@
         if( paths[2] && paths[2][0] === '@' && paths.length >= 4 ) dir = paths.slice(0, 4).join('/');
         else dir = paths.slice(0, 3).join('/');
         
-        return loadPackage(baseurl + dir);
+        return loadPackage(dir);
       }
       
       return mainpkg;
@@ -620,7 +672,7 @@
       if( !src ) throw new TypeError('missing src');
       if( typeof src !== 'string' ) throw new TypeError('src must be a string');
       
-      if( debug ) console.log('load', src);
+      if( debug ) log('load', src);
       
       src = path.resolve(src);
       if( cache[src] ) return cache[src];
@@ -643,15 +695,14 @@
       module.require = createRequire(module);
       
       var dir = path.dirname(src);
-      
       while(dir) {
         module.paths.push(path.resolve(dir, WEB_MODULES));
         module.paths.push(path.resolve(dir, NODE_MODULES));
-        if( dir === '/' || path.pathname(dir) === '/' ) break;
+        if( dir === '/' ) break;
         dir = path.resolve(dir, '..');
       }
       
-      if( debug ) console.log('load', src, pkg.name, module);
+      if( debug ) log('load', src, pkg.name, module);
       
       var loaded = loaders.load(src, pkg.loader), fn;
       if( 'exports' in loaded ) {
@@ -678,12 +729,13 @@
     }
     
     var forced = [];
+    
     function createRequire(module) {
       var filename = module && module.filename;
       var dir = filename ? path.dirname(filename) : mainpkg.dir;
       var pkg = getPackage(dir);
       
-      if( debug ) console.log('create require', filename, dir, pkg);
+      if( debug ) log('create require', filename, dir, pkg);
       
       function getDependencyPackage(name) {
         var confirmed;
@@ -695,7 +747,7 @@
               try {
                 var dir = path.resolve(module.paths[i], name);
                 if( existsDirectory(dir) ) confirmed = dir;
-                //console.log('found', dir, confirmed);
+                //log('found', dir, confirmed);
               } catch(e) {}
             }
           })();
@@ -704,7 +756,7 @@
         // 못찾았다면 modulebase 를 기준.
         confirmed = confirmed || path.resolve(modulebase, name);
         
-        if( debug ) console.log('sub package[' + name + '] dir:', confirmed);
+        if( debug ) log('sub package[' + name + '] dir:', confirmed);
         return loadPackage(confirmed);
       }
       
@@ -736,12 +788,12 @@
           if( alias === false ) throw new Error('sub module \'' + src + '\' is ignored: ' + pkg.name);
           else if( alias && typeof alias === 'string' ) src = alias;
           
-          if( debug ) console.log('resolve(alias)', src, alias, pkg.aliases, pkg.manifest.browser);
+          if( debug ) log('resolve(alias)', src, alias, pkg.aliases, pkg.manifest.browser);
         }
         
         if( !src.indexOf('.') ) {
           filepath = path.resolve(path.join(dir, src));
-        } else if( !src.indexOf('/') || ~src.indexOf('://') ) {
+        } else if( !src.indexOf('/') ) {
           filepath = path.resolve(src);
         } else {
           var pkgname, subpath;
@@ -782,7 +834,7 @@
         
         filepath = resolveFilename(filepath);
         
-        if( debug ) console.log('resolve', src, filepath);
+        if( debug ) log('resolve', src, filepath);
         return filepath;
       }
       
@@ -922,12 +974,12 @@
               }
               
               var result = WebModules.require(src);
-              if( debug ) console.log('bootstrap', src, result);
+              if( debug ) log('bootstrap', src, result);
               for( var k in result ) libs.define(k, result[k]);
             });
           } else {
             var result = WebModules.require('webmodules').require('node-libs-browser');
-            if( debug ) console.log('bootstrap', result);
+            if( debug ) log('bootstrap', result);
             for( var k in result )
               if( result[k] ) libs.define(k, result[k]);
           }
@@ -1052,7 +1104,7 @@
                 });
               });
             });
-            
+          
             observer.observe(doc.documentElement, {
               childList: true,
               subtree: true
@@ -1061,9 +1113,16 @@
         }
       }
       
-      doc.addEventListener('DOMContentLoaded', function() {
-        domreadyfn();
-      });
+      if( doc.addEventListener ) {
+        doc.addEventListener('DOMContentLoaded', function() {
+          domreadyfn();
+        });
+      } else if( doc.attachEvent ) {
+        doc.attachEvent("onreadystatechange", function () {
+          if(document.readyState === "complete")
+            domreadyfn();
+        });
+      }
     })();
   })();
 })();

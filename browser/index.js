@@ -71,6 +71,7 @@ function init() {
       
       css = css.replace(/url\s*\(\s*(['"]?)([^"'\)]*)\1\s*\)/gi, function(match) {
         match = match.trim().substring(4, match.length - 1).split('"').join('').split('\'').join('').trim();
+        if( ~match.indexOf('://') || match.indexOf('//') === 0 ) return 'url(\"' + match + '\")';
         if( match.toLowerCase().indexOf('data:') !== 0 ) match = path.resolve(base, match);
         return 'url(\"' + match + '\")';
       });
@@ -91,6 +92,18 @@ function init() {
     }
   });
   
+  runtime.loaders.define('env', {
+    mimeTypes: ['webmodules/env'],
+    load: function(source, file) {
+      var o = source ? JSON.parse(source) : null;
+      for(var k in o) process.env[k] = o[k];
+      
+      return {
+        exports: o
+      };
+    }
+  });
+  
   /*
   <script type="webmodules/env">
     {
@@ -105,18 +118,6 @@ function init() {
     }
   </script>
   */
-  runtime.loaders.define('env', {
-    mimeTypes: ['webmodules/env'],
-    load: function(source, file) {
-      var o = source ? JSON.parse(source) : null;
-      for(var k in o) process.env[k] = o[k];
-      
-      return {
-        exports: o
-      };
-    }
-  });
-
   runtime.loaders.define('less', {
     extensions: ['.less'],
     mimeTypes: ['text/less'],
@@ -239,6 +240,16 @@ function init() {
       
       return {
         code: source
+      };
+    }
+  });
+  
+  runtime.loaders.define('text', {
+    extensions: ['.txt', '.text', '.htm', '.html'],
+    mimeTypes: ['text/plain'],
+    load: function(source) {
+      return {
+        exports: source
       };
     }
   });
