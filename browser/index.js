@@ -71,6 +71,7 @@ function init() {
       
       css = css.replace(/url\s*\(\s*(['"]?)([^"'\)]*)\1\s*\)/gi, function(match) {
         match = match.trim().substring(4, match.length - 1).split('"').join('').split('\'').join('').trim();
+        if( ~match.indexOf('://') || match.indexOf('//') === 0 ) return 'url(\"' + match + '\")';
         if( match.toLowerCase().indexOf('data:') !== 0 ) match = path.resolve(base, match);
         return 'url(\"' + match + '\")';
       });
