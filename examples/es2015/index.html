@@ -8,11 +8,11 @@
   <title>ES2015 - webmodules</title>
   
   <!-- using bundled jquery transpiler, because bootstrap js requires global jQuery object -->
-  <meta name="webmodules.loader.global" match="/web_modules/bootstrap/**/*.js" loader="jquery">
+  <meta name="webmodules.loader.global" match="/node_modules/bootstrap/**/*.js" loader="jquery">
   <meta name="webmodules.loader" match="**/*.js" loader="es2015">
   
   <script type="text/es2015" data-src="js/app.js"></script>
-  <script src="/web_modules/webmodules/runtime.js"></script>
+  <script src="/node_modules/webmodules/runtime.js"></script>
   
   <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
   <!--[if lt IE 9]>
