@@ -1,7 +1,6 @@
 console.log('inline.es6', require('/inline.js'));
 console.log('inline.coffee', require('/inline.coffee'));
 console.log('inline.es6', require('/inline.es6'));
-console.log('inline.jsx', require('/inline.jsx'));
 console.log('inline.css', require('/inline.css'));
 console.log('inline.less', require('/inline.less'));
 console.log('inline.html', require('/inline.html'));
