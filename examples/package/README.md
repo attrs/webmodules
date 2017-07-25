@@ -10,8 +10,7 @@ $ cd webmodules/examples/package
 ## Development
 ```sh
 $ npm install
-$ wpm install
-$ wpm up 9000 -o -s
+$ wpm up -s
 ```
 
 ## Build
