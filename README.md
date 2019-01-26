@@ -1,6 +1,6 @@
 # webmodules
 
-browser commonjs runtime
+**THIS PROJECT IS NO LONGER MAINTAINED**
 
 [![NPM Version][npm-version]][npm-url] [![NPM Downloads][npm-total]][npm-url] [![NPM Downloads][npm-month]][npm-url] [![NPM Downloads][license]][npm-url] [![Join the chat at https://gitter.im/attrs/webmodules][gitter]][gitter-link]
 
